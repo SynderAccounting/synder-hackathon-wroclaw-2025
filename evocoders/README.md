@@ -4,6 +4,38 @@
 
 This is a submodule of the main repository: [BOBHack](git@github.com:Fl0p/BOBHack.git)
 
+## Getting Started
+
+### Initialize and Pull Submodule
+
+If you cloned the main repository without submodules:
+
+```bash
+# Initialize submodule
+git submodule init
+
+# Pull submodule content
+git submodule update
+```
+
+Or in one command:
+
+```bash
+git submodule update --init --recursive
+```
+
+To clone the main repository with all submodules at once:
+
+```bash
+git clone --recursive git@github.com:Fl0p/BOBHack.git
+```
+
+To update submodule to the latest commit:
+
+```bash
+git submodule update --remote
+```
+
 ## About
 
 Created during **synder-hackathon-wroclaw-2025** hackathon, this project provides a comprehensive platform for creating and managing intelligent bots to automate back-office operations.
