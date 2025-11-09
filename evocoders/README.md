@@ -6,13 +6,13 @@
 
 Every back-office process is captured as a configuration: fields, types, mandatory logic, validation rules, data sources. On top sits a unified LLM layer that pulls data from integrations, assembles a structured answer, and returns a ready draft to the operator. The product-card bot is showcased as the **first module** on this platform, not the only use case.
 
-### Why the Platform Beats “Just One Bot”
+### Why the Platform Beats "Just One Bot"
 
-1. **Unified form model.** Any form lives in a single format: fields → type → required → validation rules → AI hints. The core doesn’t care whether it is a product form or a return — just different configurations.
-2. **Reusable AI stack.** One LLM layer handles prompting, structured JSON output, validation, logging. To launch a new bot you describe the form, connect data sources, and lightly tailor the prompt.
-3. **Process scalability.** Today we demo product onboarding. Tomorrow returns, supplier requests, expenses. The architecture already lets us “stamp” bots via configuration instead of rewriting projects.
-4. **Single operator workspace.** All back-office bots live in one interface: today the operator onboards products, tomorrow files a return, next week prepares an expense report — without system hopping.
-5. **Bridge operators and makers.** The platform gives non-technical back-office teams a clear way to describe fields, rules, and data sources, while technical specialists reuse the same core to spin up the bot — collaboration happens in one place instead of endless briefs.
+1. **Bridge operators and makers.** The platform connects non-technical back-office workers with their routine tasks and operational challenges to any technical specialist who can create AI bots on the Dify low-code platform. These specialists can solve problems or simplify routine work — from streamlining marketplace form filling and competitor insights to tax reports. Built bots become products that can be sold on our platform.
+2. **Unified form model.** Any form lives in a single format: fields → type → required → validation rules → AI hints. The core doesn't care whether it is a product form or a return — just different configurations.
+3. **Reusable AI stack.** One LLM layer handles prompting, structured JSON output, validation, logging. To launch a new bot you describe the form, connect data sources, and lightly tailor the prompt.
+4. **Process scalability.** Today we demo product onboarding. Tomorrow returns, supplier requests, expenses. The architecture already lets us "stamp" bots via configuration instead of rewriting projects.
+5. **Single operator workspace.** All back-office bots live in one interface: today the operator onboards products, tomorrow files a return, next week prepares an expense report — without system hopping.
 
 ### How It Lands in the Business Story
 
