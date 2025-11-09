@@ -1,0 +1,168 @@
+/* === Importy Tailwinda i animacji === */
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* === Motyw kolorów: jasny i ciemny === */
+@layer theme {
+  :root {
+    /* 🎨 Akcenty */
+    --color-accent: hsl(219, 80%, 20%);
+    /* 🌞 Jasne tło i tekst */
+    --bg-dark: hsl(229 100% 95%);
+    --bg: hsl(229 100% 100%);
+    --bg-light: hsl(229 100% 100%);
+    --text: hsl(251 100% 10%);
+    --text-muted: hsl(233 40% 36%);
+    --highlight: hsl(230 100% 100%);
+    --border: hsl(231 41% 59%);
+    --border-muted: hsl(230 61% 72%);
+
+    /* 🌈 Statusy */
+    --danger: hsl(8 43% 42%);
+    --warning: hsl(53 100% 19%);
+    --success: hsl(157 83% 25%);
+    --info: hsl(217 46% 43%);
+  }
+
+  .dark {
+    /* 🎨 Akcenty – tryb ciemny */
+    --color-accent:  hsl(219, 80%, 80%);
+    /* 🌚 Ciemne tło i tekst */
+    --bg-dark: hsl(243 93% 4%);
+    --bg: hsl(237 70% 8%);
+    --bg-light: hsl(233 50% 12%);
+    --text: hsl(229 100% 98%);
+    --text-muted: hsl(230 74% 78%);
+    --highlight: hsl(232 33% 48%);
+    --border: hsl(233 40% 36%);
+    --border-muted: hsl(237 51% 26%);
+
+    /* 🌈 Statusy */
+    --danger: hsl(8 58% 66%);
+    --warning: hsl(51 41% 48%);
+    --success: hsl(150 37% 53%);
+    --info: hsl(217 66% 68%);
+  }
+}
+
+/* === Styl bazowy (typografia, tło, kolory tekstu) === */
+@layer base {
+  * {
+    border-color: var(--border);
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  /* Domyślnie tryb ciemny - dodaj klasę 'dark' do html */
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply font-sans transition-colors duration-300;
+    background-color: var(--bg);
+    color: var(--text);
+  }
+
+  #root {
+    margin: 0;
+    padding: 0;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--color-accent);
+    font-weight: 700;
+  }
+
+  a {
+    color: var(--color-tertiary);
+    text-decoration: underline;
+  }
+
+  a:hover {
+    color: var(--color-accent);
+  }
+}
+
+/* === Dodatkowe klasy użytkowe (opcjonalne) === */
+@layer utilities {
+  .text-accent {
+    color: var(--color-accent);
+  }
+
+  .bg-accent {
+    background-color: var(--color-accent);
+  }
+
+  .bg-primary {
+    background-color: var(--color-primary);
+  }
+
+  .border-muted {
+    border-color: var(--border-muted);
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 font-semibold rounded-md shadow-md transition;
+    background-color: var(--color-accent);
+    color: var(--text);
+  }
+
+  .btn-primary:hover {
+    opacity: 0.85;
+  }
+
+  .card {
+    @apply rounded-lg shadow-sm border p-4 transition-colors duration-300;
+    background-color: var(--bg-light);
+    color: var(--text);
+  }
+
+  .card-dark {
+    @apply rounded-lg shadow-md border p-4;
+    background-color: var(--bg-dark);
+    color: var(--text-muted);
+  }
+}
+
+:root {
+  --sidebar: hsl(0 0% 98%);
+  --sidebar-foreground: hsl(240 5.3% 26.1%);
+  --sidebar-primary: hsl(240 5.9% 10%);
+  --sidebar-primary-foreground: hsl(0 0% 98%);
+  --sidebar-accent: hsl(240 4.8% 95.9%);
+  --sidebar-accent-foreground: hsl(240 5.9% 10%);
+  --sidebar-border: hsl(220 13% 91%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+}
+
+.dark {
+  --sidebar: hsl(240 5.9% 10%);
+  --sidebar-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-primary: hsl(224.3 76.3% 48%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(240 3.7% 15.9%);
+  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-border: hsl(240 3.7% 15.9%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+}
+
+@theme inline {
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
