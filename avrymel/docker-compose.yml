@@ -75,6 +75,60 @@ services:
       retries: 3
       start_period: 40s
 
+  amazon:
+    build:
+      context: ./mock_api
+      dockerfile: services/amazon/Dockerfile
+    container_name: mock-api-amazon
+    ports:
+      - "55000:55000"
+    environment:
+      - FLASK_ENV=production
+    networks:
+      - synderhacks-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:55000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  etsy:
+    build:
+      context: ./mock_api
+      dockerfile: services/etsy/Dockerfile
+    container_name: mock-api-etsy
+    ports:
+      - "55001:55000"
+    environment:
+      - FLASK_ENV=production
+    networks:
+      - synderhacks-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:55000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  shopify:
+    build:
+      context: ./mock_api
+      dockerfile: services/shopify/Dockerfile
+    container_name: mock-api-shopify
+    ports:
+      - "55002:55000"
+    environment:
+      - FLASK_ENV=production
+    networks:
+      - synderhacks-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:55000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
 networks:
   synderhacks-network:
     driver: bridge

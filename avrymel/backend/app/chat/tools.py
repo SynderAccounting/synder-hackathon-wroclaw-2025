@@ -21,8 +21,8 @@ async def query_database(query: str, config: RunnableConfig) -> str:
     """
     session = config["configurable"]["db"]
 
-    # Set tenant context for multi-tenancy
-    await session.execute(text("SELECT set_tenant(1)"))
+    # Set merchant context for RLS
+    await session.execute(text("SELECT set_current_merchant(1)"))
 
     try:  # FIXME(ginal): we might need to remove these
         result = await session.execute(text(query))
@@ -108,7 +108,7 @@ async def pie_chart_from_sql_query(query: str, config: RunnableConfig, descripti
     """
     session = config["configurable"]["db"]
 
-    await session.execute(text("SELECT set_tenant(1)"))
+    await session.execute(text("SELECT set_current_merchant(1)"))
 
     try:
         result = await session.execute(text(query))
@@ -153,7 +153,7 @@ async def horizontal_bar_chart_from_query(query: str, config: RunnableConfig) ->
     """
     session = config["configurable"]["db"]
 
-    await session.execute(text("SELECT set_tenant(1)"))
+    await session.execute(text("SELECT set_current_merchant(1)"))
 
     try:
         result = await session.execute(text(query))
