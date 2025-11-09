@@ -1,0 +1,100 @@
+spring:
+  application:
+    name: ai-adviser
+  
+  datasource:
+    url: jdbc:h2:mem:aiadviser
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+  
+  profiles:
+    active: demo
+
+server:
+  port: 5000
+  address: 0.0.0.0
+
+logging:
+  level:
+    com.aiadviser: DEBUG
+    org.mockserver: WARN
+
+external-services:
+  shopify:
+    base-url: ${SHOPIFY_API_URL:http://localhost:9090}
+    api-key: ${SHOPIFY_API_KEY:demo-key}
+    api-secret: ${SHOPIFY_API_SECRET:demo-secret}
+    store-name: ${SHOPIFY_STORE_NAME:demo-store}
+    api-version: "2024-01"
+  
+  baselinker:
+    base-url: ${BASELINKER_API_URL:http://localhost:9090}
+    api-token: ${BASELINKER_API_TOKEN:demo-token}
+  
+  claude:
+    base-url: ${CLAUDE_API_URL:http://localhost:9090}
+    api-key: ${ANTHROPIC_API_KEY:demo-key}
+    model: claude-3-5-sonnet-20241022
+    api-version: "2023-06-01"
+    max-tokens: 1024
+
+mockserver:
+  enabled: true
+  port: 9090
+
+financial:
+  carrying-cost-rate: 0.20
+  stockout-penalty-rate: 0.15
+  forecast-horizon-days: 30
+
+---
+spring:
+  config:
+    activate:
+      on-profile: demo
+
+mockserver:
+  enabled: true
+  port: 9090
+
+external-services:
+  shopify:
+    base-url: http://localhost:9090
+  baselinker:
+    base-url: http://localhost:9090
+  claude:
+    base-url: http://localhost:9090
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+mockserver:
+  enabled: false
+
+external-services:
+  shopify:
+    base-url: https://${SHOPIFY_STORE_NAME}.myshopify.com/admin/api/${external-services.shopify.api-version}
+    api-key: ${SHOPIFY_API_KEY}
+    api-secret: ${SHOPIFY_API_SECRET}
+  
+  baselinker:
+    base-url: https://api.baselinker.com/connector.php
+    api-token: ${BASELINKER_API_TOKEN}
+  
+  claude:
+    base-url: https://api.anthropic.com
+    api-key: ${ANTHROPIC_API_KEY}

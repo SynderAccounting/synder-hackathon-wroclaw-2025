@@ -1,0 +1,11 @@
+services:
+
+  mock-server:
+    image: mockserver/mockserver:5.15.0
+    networks:
+      - justers
+    ports:
+      - "9090:1080"
+
+networks:
+  justers:
