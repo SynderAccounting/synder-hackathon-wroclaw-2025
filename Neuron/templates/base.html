@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}One Front{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand" style="width: 500px;">
+            <img src="{{ url_for('static', filename='logo.webp') }}" alt="One Front" class="logo">
+        </div>
+        <ul class="nav-menu">
+            <li><a href="{{ url_for('index') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('customers') }}"><i class="fas fa-users"></i> Customers</a></li>
+            <li><a href="{{ url_for('products') }}"><i class="fas fa-box"></i> Products</a></li>
+            <li><a href="{{ url_for('orders') }}"><i class="fas fa-shopping-cart"></i> Orders</a></li>
+            <li><a href="{{ url_for('tracking') }}"><i class="fas fa-truck"></i> Tracking</a></li>
+            <li><a href="{{ url_for('documentation') }}"><i class="fas fa-book"></i> Documentation</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer>
+        <p>&copy; 2025 One Front System</p>
+    </footer>
+    
+    <!-- Floating Chatbot Button -->
+    <button id="global-chatbot-btn" class="floating-chatbot-btn" title="Database Query Assistant">
+        <span>💬</span>
+    </button>
+    
+    <!-- Global Chatbot Modal -->
+    <div id="global-chatbot-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content chatbot-modal">
+            <div class="modal-header">
+                <h3>Synder Assistant</h3>
+                <button type="button" id="close-global-chatbot" class="close-btn">&times;</button>
+            </div>
+            <div id="global-chatbot-messages" class="chatbot-messages">
+                <div class="message bot-message">
+                    <strong>🤖 Synder Assistant:</strong> Hello! I'm your intelligent CRM assistant. I can help you with customer data, product management, order tracking, and more! Ask me anything about your business data.
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" id="global-chatbot-input" class="form-control" placeholder="Ask me anything about your CRM data..." autocomplete="off">
+                <button type="button" id="send-global-chatbot" class="send-btn">➤</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

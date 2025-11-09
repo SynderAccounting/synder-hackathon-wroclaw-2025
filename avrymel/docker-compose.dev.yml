@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: synderhacks-postgres-dev
+    environment:
+      - POSTGRES_USER=synderhacks
+      - POSTGRES_PASSWORD=synderhacks_dev_password
+      - POSTGRES_DB=synderhacks_dev_db
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - synderhacks-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U synderhacks"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: synderhacks-backend-dev
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql+asyncpg://synderhacks:synderhacks_dev_password@postgres:5432/synderhacks_dev_db
+      - SECRET_KEY=dev-secret-key-not-for-production
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - synderhacks-network
+    restart: unless-stopped
+    command: python run.py
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: synderhacks-frontend-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - synderhacks-network
+    restart: unless-stopped
+    command: npm run dev
+
+networks:
+  synderhacks-network:
+    driver: bridge
+
+volumes:
+  postgres_dev_data:

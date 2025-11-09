@@ -1,0 +1,65 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+!DOCKER.md
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+nul
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+.venv
+venv
+env
+
+# Node
+node_modules
+npm-debug.log*
+yarn-debug.log*
+.pnpm-debug.log*
+
+# Environment
+.env*.local
+.env
+
+# Build artifacts
+.next
+out
+dist
+
+# Logs
+*.log
+
+# Test
+.pytest_cache
+.coverage
+htmlcov
+coverage
+
+# Temporary files
+*.tmp
+*.temp
+test-*.json

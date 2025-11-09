@@ -1,0 +1,638 @@
+{% extends "base.html" %}
+
+{% block title %}Order #{{ order.id }} - One Front{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Order #{{ order.id }}</h2>
+</div>
+
+<div class="order-header">
+    <div class="order-info">
+        <div class="customer-section">
+            <div class="customer-icon">
+                <i class="fas fa-user" style="font-size: 64px;"></i>
+            </div>
+            <div class="customer-details">
+                <h3>
+                    <a href="{{ url_for('customer_detail', customer_id=order.customer_id) }}">{{ order.customer_name }}</a>
+                </h3>
+                <p><i class="fas fa-envelope"></i> {{ order.customer_email }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="order-summary">
+        <div class="order-stats">
+            <div class="stat-item">
+                <div class="label">Order Date</div>
+                <div class="value">{{ order.order_date }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="label">Payment Method</div>
+                <div class="value">{{ order.payment_method }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="label">Status</div>
+                <div class="value"><span class="badge badge-{{ order.status }}">{{ order.status }}</span></div>
+            </div>
+            <div class="stat-item">
+                <div class="label">Total Amount</div>
+                <div class="value total-amount">${{ "%.2f"|format(order.total_amount) }}</div>
+            </div>
+        </div>
+
+        {% if order.tracking_number %}
+        <div class="tracking-info">
+            <div class="stat-item">
+                <div class="label">Tracking Number</div>
+                <div class="value tracking-number">{{ order.tracking_number }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if order.shipping_address %}
+        <div class="shipping-info">
+            <div class="label">Shipping Address</div>
+            <div class="value">{{ order.shipping_address }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Tracking section -->
+<div class="tracking-section">
+    {% if order.tracking_number %}
+        <a href="{{ url_for('tracking') }}?tracking_number={{ order.tracking_number }}" class="btn btn-primary">
+            <i class="fas fa-truck"></i> Track Package
+        </a>
+    {% else %}
+        <button class="btn btn-primary" onclick="showTrackingInput()">
+            <i class="fas fa-shipping-fast"></i> Add Tracking Number
+        </button>
+
+        <div id="trackingInput" style="display: none; margin-top: 15px;">
+            <form method="POST" action="{{ url_for('add_tracking_number', order_id=order.id) }}" class="inline-form">
+                <div class="form-group">
+                    <label for="tracking_number"><i class="fas fa-barcode"></i> Enter Tracking Number:</label>
+                    <input type="text" id="tracking_number" name="tracking_number" placeholder="Enter tracking number" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Save Tracking Number</button>
+                <button type="button" class="btn btn-secondary" onclick="hideTrackingInput()">Cancel</button>
+            </form>
+        </div>
+    {% endif %}
+</div>
+
+<div class="detail-card">
+    <h3>Invoice</h3>
+    <div class="detail-grid">
+        <div class="detail-item" id="invoice-section-{{ order.id }}">
+            {% if order.invoice_number %}
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div>
+                        <strong>Invoice Number:</strong>
+                        <a href="#" onclick="showInvoiceModal({{ order.id }}, event)" class="invoice-link">{{ order.invoice_number }}</a>
+                    </div>
+                    <a href="/orders/{{ order.id }}/invoice/download" class="btn btn-primary btn-small" style="color: white;">Download PDF</a>
+                </div>
+            {% else %}
+                <button onclick="generateInvoice({{ order.id }})" class="btn btn-small" style="background: #28a745; color: white;">Generate Invoice</button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <h3>Order Items</h3>
+    {% if items %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Unit Price</th>
+                    <th>Quantity</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.product_name if item.product_name else 'Product ' + item.product_id|string }}</td>
+                    <td>${{ "%.2f"|format(item.unit_price) }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>${{ "%.2f"|format(item.subtotal) }}</td>
+                </tr>
+                {% endfor %}
+                <tr class="total-row">
+                    <td colspan="3"><strong>Total:</strong></td>
+                    <td><strong>${{ "%.2f"|format(order.total_amount) }}</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    {% else %}
+        <div class="no-items">
+            <p><i class="fas fa-info-circle"></i> No items found for this order.</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="section" style="margin-top: 30px;">
+    <h3>Update Order Status</h3>
+    <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" class="inline-form">
+        <div class="form-row">
+            <div class="form-group" style="width: 300px;">
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="processing" {% if order.status == 'processing' %}selected{% endif %}>Processing</option>
+                    <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>Shipped</option>
+                    <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                    <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>&nbsp;</label>
+                <button type="submit" class="btn btn-primary" style="height: 45px;">Update Status</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Modal for displaying invoice -->
+<div id="invoiceModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 90%; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header">
+            <h3 id="modalInvoiceTitle">Invoice Details</h3>
+            <span class="close" onclick="closeModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="invoiceContent">
+                <!-- Invoice content will be loaded here -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+            <button class="btn btn-primary" onclick="printInvoice()">Print Invoice</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal backdrop -->
+<div id="modalBackdrop" class="modal-backdrop" style="display: none;" onclick="closeModal()"></div>
+
+<script>
+function generateInvoice(orderId) {
+    const section = document.getElementById(`invoice-section-${orderId}`);
+    const button = section.querySelector('button');
+    const originalText = button.textContent;
+
+    // Disable button and show loading state
+    button.disabled = true;
+    button.textContent = 'Generating...';
+
+    // Make POST request to generate invoice
+    fetch(`/orders/${orderId}/generate_invoice`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Replace button with clickable invoice number and download button
+            section.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div>
+                        <strong>Invoice Number:</strong>
+                        <a href="#" onclick="showInvoiceModal(${orderId}, event)" class="invoice-link">${data.invoice_number}</a>
+                    </div>
+                    <a href="/orders/${orderId}/invoice/download" class="btn btn-primary btn-small" style="color: white;">Download PDF</a>
+                </div>
+            `;
+
+            // Show success message
+            alert(`Invoice generated successfully: ${data.invoice_number}`);
+
+            // Optional: You can log the full invoice data or send it to another endpoint
+            console.log('Invoice Data:', data.invoice);
+        } else {
+            // Show error message
+            alert(`Error: ${data.error}`);
+            button.disabled = false;
+            button.textContent = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to generate invoice. Please try again.');
+        button.disabled = false;
+        button.textContent = originalText;
+    });
+}
+
+function showInvoiceModal(orderId, event) {
+    if (event) event.preventDefault();
+
+    // Show loading in modal
+    document.getElementById('modalInvoiceTitle').textContent = 'Loading Invoice...';
+    document.getElementById('invoiceContent').innerHTML = '<p>Loading...</p>';
+    document.getElementById('invoiceModal').style.display = 'block';
+    document.getElementById('modalBackdrop').style.display = 'block';
+
+    // Fetch invoice by order ID
+    fetch(`/api/invoice_by_order/${orderId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('modalInvoiceTitle').textContent = `Invoice: ${data.invoice_number}`;
+
+                // Create invoice HTML content
+                let htmlContent = `
+                    <div class="invoice-preview">
+                        <div class="invoice-header">
+                            <h1>VAT Invoice</h1>
+                            <p><strong>Invoice Number:</strong> ${data.invoice_number}</p>
+                            <p><strong>Issue Date:</strong> ${data.issue_date}</p>
+                            <p><strong>Supply Date:</strong> ${data.supply_date}</p>
+                        </div>
+
+                        <div class="invoice-parties">
+                            <div class="invoice-party">
+                                <h4>Seller:</h4>
+                                <p><strong>${data.supplier_name}</strong><br>
+                                ${data.supplier_address.replace(/\n/g, '<br>')}<br>
+                                NIP: ${data.supplier_nip}</p>
+                            </div>
+                            <div class="invoice-party">
+                                <h4>Buyer:</h4>
+                                <p><strong>${data.customer_name}</strong><br>
+                                ${data.customer_address.replace(/\n/g, '<br>')}<br>
+                                ${data.customer_nip ? 'NIP: ' + data.customer_nip : ''}</p>
+                            </div>
+                        </div>
+
+                        <div class="invoice-items">
+                            <h4>Invoice Items:</h4>
+                            <table class="invoice-table">
+                                <thead>
+                                    <tr>
+                                        <th>No.</th>
+                                        <th>Description</th>
+                                        <th>Quantity</th>
+                                        <th>Unit Price (Net)</th>
+                                        <th>VAT</th>
+                                        <th>Net Value</th>
+                                        <th>VAT</th>
+                                        <th>Gross Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+
+                let itemIndex = 1;
+                for (const item of data.items) {
+                    htmlContent += `
+                        <tr>
+                            <td>${itemIndex++}</td>
+                            <td>${item.item}</td>
+                            <td>${item.quantity}</td>
+                            <td>${item.unit_price_net.toFixed(2)}</td>
+                            <td>${(item.vat_rate * 100).toFixed(2)}%</td>
+                            <td>${item.net_total.toFixed(2)}</td>
+                            <td>${item.vat_amount.toFixed(2)}</td>
+                            <td>${item.gross_total.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }
+
+                htmlContent += `
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="invoice-totals">
+                            <div class="totals-summary">
+                                <p><strong>Net Total: ${data.overall_net_total.toFixed(2)} ${data.currency}</strong></p>
+                                <p><strong>VAT Total: ${data.overall_vat_amount.toFixed(2)} ${data.currency}</strong></p>
+                                <hr>
+                                <h4><strong>Amount Due: ${data.overall_gross_total.toFixed(2)} ${data.currency}</strong></h4>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('invoiceContent').innerHTML = htmlContent;
+            } else {
+                document.getElementById('invoiceContent').innerHTML = `<p>Error loading invoice: ${data.error}</p>`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('invoiceContent').innerHTML = '<p>Error loading invoice. Please try again.</p>';
+        });
+}
+
+function closeModal() {
+    document.getElementById('invoiceModal').style.display = 'none';
+    document.getElementById('modalBackdrop').style.display = 'none';
+}
+
+function printInvoice() {
+    // Get the invoice content and print it
+    const printContent = document.getElementById('invoiceContent').innerHTML;
+    const originalContent = document.body.innerHTML;
+
+    document.body.innerHTML = `
+        <html>
+            <head>
+                <title>Invoice ${document.getElementById('modalInvoiceTitle').textContent}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    .invoice-header, .invoice-parties, .invoice-items, .invoice-totals { margin: 1rem 0; }
+                    .invoice-party { width: 50%; display: inline-block; vertical-align: top; }
+                    .invoice-table { width: 100%; border-collapse: collapse; }
+                    .invoice-table th, .invoice-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    .invoice-table th { background-color: #f2f2f2; }
+                    .totals-summary { background-color: #f9f9f9; padding: 15px; border-radius: 5px; }
+                </style>
+            </head>
+            <body>${printContent}</body>
+        </html>
+    `;
+
+    window.print();
+    document.body.innerHTML = originalContent;
+}
+
+function showTrackingInput() {
+    document.getElementById('trackingInput').style.display = 'block';
+}
+
+function hideTrackingInput() {
+    document.getElementById('trackingInput').style.display = 'none';
+}
+
+// Add styling for the modal
+const modalStyles = document.createElement('style');
+modalStyles.textContent = `
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1000;
+    }
+    .modal-content {
+        background-color: white;
+        margin: 2% auto;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        position: relative;
+    }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+    .modal-body {
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+    }
+    .close {
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 999;
+    }
+    .invoice-link {
+        color: #3498db;
+        text-decoration: underline;
+        cursor: pointer;
+        font-weight: 500;
+    }
+    .invoice-link:hover {
+        color: #2980b9;
+        text-decoration: none;
+    }
+    .invoice-preview {
+        font-family: Arial, sans-serif;
+    }
+    .invoice-header h1 {
+        margin: 0;
+        color: #2c3e50;
+    }
+    .invoice-parties {
+        display: flex;
+        gap: 2rem;
+        margin: 1.5rem 0;
+    }
+    .invoice-party {
+        flex: 1;
+    }
+    .invoice-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+    }
+    .invoice-table th, .invoice-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    .invoice-table th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+    }
+    .totals-summary {
+        background-color: #f9f9f9;
+        padding: 15px;
+        border-radius: 5px;
+        margin-top: 1.5rem;
+    }
+`;
+document.head.appendChild(modalStyles);
+</script>
+<style>
+.order-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.order-info {
+    flex: 1;
+    min-width: 300px;
+}
+
+.customer-section {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.customer-icon {
+    font-size: 24px;
+    color: #007bff;
+    margin-top: 5px;
+}
+
+.customer-details h3 {
+    margin: 0 0 5px 0;
+    font-size: 1.5em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.customer-details h3 i {
+    font-size: 0.8em;
+    color: #007bff;
+}
+
+.customer-details p {
+    margin: 0;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+.order-summary {
+    flex: 2;
+    min-width: 300px;
+}
+
+.order-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.stat-item {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.stat-item .label {
+    font-size: 0.85em;
+    color: #6c757d;
+    margin-bottom: 4px;
+}
+
+.stat-item .value {
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+.total-amount {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.tracking-number {
+    font-family: monospace;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.shipping-info {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.shipping-info .label {
+    font-size: 0.85em;
+    color: #6c757d;
+    margin-bottom: 4px;
+}
+
+.shipping-info .value {
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+.tracking-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    text-align: center;
+}
+
+.tracking-section .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+@media (max-width: 768px) {
+    .order-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .order-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+.no-items {
+    padding: 20px;
+    text-align: center;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    margin-top: 10px;
+}
+
+.no-items i {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    display: block;
+}
+</style>
+{% endblock %}

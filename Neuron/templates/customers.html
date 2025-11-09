@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Customers - One Front{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="fas fa-users"></i> Customers</h2>
+    <a href="{{ url_for('add_customer') }}" class="btn btn-primary"><i class="fas fa-plus" style="margin-right: 10px;"></i>Add New Customer</a>
+</div>
+
+<!-- Search Form -->
+<form method="GET" class="search-form">
+    <div class="search-container">
+        <input type="text" name="search" placeholder="Search customers by name, email, or phone..." value="{{ search_query or '' }}" class="form-control">
+        <button type="submit" class="btn btn-primary">Search</button>
+        {% if search_query %}
+            <a href="{{ url_for('customers') }}" class="btn btn-secondary">Clear</a>
+        {% endif %}
+    </div>
+</form>
+
+{% if customers %}
+<div class="customers-grid">
+    {% for customer in customers %}
+    <div class="customer-card">
+        <div class="customer-header">
+            <div class="customer-avatar">{{ customer.name[0].upper() }}</div>
+            <div class="customer-info">
+                <h3><a href="{{ url_for('customer_detail', customer_id=customer.id) }}">{{ customer.name }}</a></h3>
+                <span class="badge badge-{{ customer.status }}">{{ customer.status }}</span>
+            </div>
+        </div>
+        <div class="customer-details">
+            <div class="customer-detail-row">
+                <span class="detail-icon"><i class="fas fa-envelope"></i></span>
+                <span class="detail-text">{{ customer.email }}</span>
+            </div>
+            <div class="customer-detail-row">
+                <span class="detail-icon"><i class="fas fa-phone"></i></span>
+                <span class="detail-text">{{ customer.phone or 'No phone' }}</span>
+            </div>
+            <div class="customer-detail-row">
+                <span class="detail-icon"><i class="fas fa-calendar"></i></span>
+                <span class="detail-text">Joined {{ customer.date_joined[:10] }}</span>
+            </div>
+        </div>
+        <div class="customer-actions">
+            <a href="{{ url_for('customer_detail', customer_id=customer.id) }}" class="btn btn-primary btn-small">
+                <span class="btn-icon"><i class="fas fa-eye"></i></span> View
+            </a>
+            <a href="{{ url_for('edit_customer', customer_id=customer.id) }}" class="btn btn-secondary btn-small">
+                <span class="btn-icon"><i class="fas fa-edit"></i></span> Edit
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>No Customers Found</h3>
+        <p>Start by adding your first customer to the system.</p>
+        <a href="{{ url_for('add_customer') }}" class="btn btn-primary">Add New Customer</a>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>No Customers Found</h3>
+    <p>Start by adding your first customer to the system.</p>
+    <a href="{{ url_for('add_customer') }}" class="btn btn-primary">Add New Customer</a>
+</div>
+{% endif %}
+<div style="min-height: 10vh;"></div>
+{% endblock %}

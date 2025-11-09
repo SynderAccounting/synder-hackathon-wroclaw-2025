@@ -1,0 +1,4 @@
+Name,Email,Total Price,Currency,Created at
+"Order #1001","customer1@example.com",100.00,PLN,2025-01-15
+"Order #1002","customer2@example.com",150.50,PLN,2025-01-16
+"Order #1003","customer3@example.com",75.25,PLN,2025-01-17

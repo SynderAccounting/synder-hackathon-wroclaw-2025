@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}{% if customer %}Edit{% else %}Add{% endif %} Customer - One Front{% endblock %}
+
+{% block content %}
+<div class="page-header form-page-header">
+    <h2>{% if customer %}Edit{% else %}Add New{% endif %} Customer</h2>
+</div>
+
+<form method="POST" class="form">
+    <div class="form-group">
+        <label for="name">Name *</label>
+        <input type="text" id="name" name="name" value="{{ customer.name if customer else '' }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="email">Email *</label>
+        <input type="email" id="email" name="email" value="{{ customer.email if customer else '' }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="phone">Phone</label>
+        <input type="tel" id="phone" name="phone" value="{{ customer.phone if customer else '' }}">
+    </div>
+
+    <div class="form-group">
+        <label for="address">Address</label>
+        <textarea id="address" name="address" rows="3">{{ customer.address if customer else '' }}</textarea>
+    </div>
+
+    {% if customer %}
+    <div class="form-group">
+        <label for="status">Status</label>
+        <select id="status" name="status">
+            <option value="active" {% if customer.status == 'active' %}selected{% endif %}>Active</option>
+            <option value="inactive" {% if customer.status == 'inactive' %}selected{% endif %}>Inactive</option>
+        </select>
+    </div>
+    {% endif %}
+
+    <div class="form-group">
+        <label for="notes">Notes</label>
+        <textarea id="notes" name="notes" rows="4">{{ customer.notes if customer else '' }}</textarea>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{% if customer %}Update{% else %}Create{% endif %} Customer</button>
+        <a href="{{ url_for('customers') }}" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}
