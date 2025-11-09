@@ -1,5 +1,7 @@
 # BOOB - Back Office Operations Bots Solution
 
+![Architecture](arch.png)
+
 > Automate routine back-office operations with intelligent bots
 
 > This isn’t a one-off bot for a single form. We built the **core of a back-office bot platform** that handles product cards, returns, expenses, supplier requests, and any other operational form with equal confidence.
