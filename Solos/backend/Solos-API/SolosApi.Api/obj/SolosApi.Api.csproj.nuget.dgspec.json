@@ -1,0 +1,289 @@
+{
+  "format": 1,
+  "restore": {
+    "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Api\\SolosApi.Api.csproj": {}
+  },
+  "projects": {
+    "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Api\\SolosApi.Api.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Api\\SolosApi.Api.csproj",
+        "projectName": "SolosApi.Api",
+        "projectPath": "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Api\\SolosApi.Api.csproj",
+        "packagesPath": "C:\\Users\\Aviram\\.nuget\\packages\\",
+        "outputPath": "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Api\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\Aviram\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Infrastructure\\SolosApi.Infrastructure.csproj": {
+                "projectPath": "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Infrastructure\\SolosApi.Infrastructure.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "CsvHelper": {
+              "target": "Package",
+              "version": "[33.1.0, )"
+            },
+            "Microsoft.AspNetCore.OpenApi": {
+              "target": "Package",
+              "version": "[8.0.4, )"
+            },
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[9.0.10, )"
+            },
+            "Microsoft.EntityFrameworkCore.InMemory": {
+              "target": "Package",
+              "version": "[9.0.10, )"
+            },
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[6.4.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Application\\SolosApi.Application.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Application\\SolosApi.Application.csproj",
+        "projectName": "SolosApi.Application",
+        "projectPath": "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Application\\SolosApi.Application.csproj",
+        "packagesPath": "C:\\Users\\Aviram\\.nuget\\packages\\",
+        "outputPath": "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Application\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\Aviram\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Domain\\SolosApi.Domain.csproj": {
+                "projectPath": "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Domain\\SolosApi.Domain.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "Microsoft.Extensions.Configuration.Abstractions": {
+              "target": "Package",
+              "version": "[9.0.10, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Domain\\SolosApi.Domain.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Domain\\SolosApi.Domain.csproj",
+        "projectName": "SolosApi.Domain",
+        "projectPath": "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Domain\\SolosApi.Domain.csproj",
+        "packagesPath": "C:\\Users\\Aviram\\.nuget\\packages\\",
+        "outputPath": "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Domain\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\Aviram\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Infrastructure\\SolosApi.Infrastructure.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Infrastructure\\SolosApi.Infrastructure.csproj",
+        "projectName": "SolosApi.Infrastructure",
+        "projectPath": "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Infrastructure\\SolosApi.Infrastructure.csproj",
+        "packagesPath": "C:\\Users\\Aviram\\.nuget\\packages\\",
+        "outputPath": "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Infrastructure\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\Aviram\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Application\\SolosApi.Application.csproj": {
+                "projectPath": "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Application\\SolosApi.Application.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[9.0.10, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

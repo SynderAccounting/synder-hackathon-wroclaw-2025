@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "NlLbYukjawjRC4EcwkjCU63EPHgSiJ2YTyqONtoLT3I=",
+  "Source": "SolosApi.Api",
+  "BasePath": "_content/SolosApi.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}

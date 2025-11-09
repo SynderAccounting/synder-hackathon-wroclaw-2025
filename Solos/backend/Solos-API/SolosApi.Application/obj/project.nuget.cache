@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "1YHCBuMh48P3xh3GqtoUp8MC0eyNxng6/E5RvLbNKX+6V3mXOAEJ72489EU6qfHu1evBD8T9vBKlhJz0fGYbpA==",
+  "success": true,
+  "projectFilePath": "c:\\Users\\Aviram\\Documents\\Solos-API\\SolosApi.Application\\SolosApi.Application.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Aviram\\.nuget\\packages\\microsoft.extensions.configuration.abstractions\\9.0.10\\microsoft.extensions.configuration.abstractions.9.0.10.nupkg.sha512",
+    "C:\\Users\\Aviram\\.nuget\\packages\\microsoft.extensions.primitives\\9.0.10\\microsoft.extensions.primitives.9.0.10.nupkg.sha512"
+  ],
+  "logs": []
+}

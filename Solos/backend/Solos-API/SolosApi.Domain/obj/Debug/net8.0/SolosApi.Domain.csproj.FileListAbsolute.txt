@@ -1,0 +1,11 @@
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Domain\bin\Debug\net8.0\SolosApi.Domain.deps.json
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Domain\bin\Debug\net8.0\SolosApi.Domain.dll
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Domain\bin\Debug\net8.0\SolosApi.Domain.pdb
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Domain\obj\Debug\net8.0\SolosApi.Domain.GeneratedMSBuildEditorConfig.editorconfig
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Domain\obj\Debug\net8.0\SolosApi.Domain.AssemblyInfoInputs.cache
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Domain\obj\Debug\net8.0\SolosApi.Domain.AssemblyInfo.cs
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Domain\obj\Debug\net8.0\SolosApi.Domain.csproj.CoreCompileInputs.cache
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Domain\obj\Debug\net8.0\SolosApi.Domain.dll
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Domain\obj\Debug\net8.0\refint\SolosApi.Domain.dll
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Domain\obj\Debug\net8.0\SolosApi.Domain.pdb
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Domain\obj\Debug\net8.0\ref\SolosApi.Domain.dll

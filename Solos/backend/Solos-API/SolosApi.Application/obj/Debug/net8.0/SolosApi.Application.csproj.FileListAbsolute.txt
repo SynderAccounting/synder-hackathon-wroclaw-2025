@@ -1,0 +1,15 @@
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Application\bin\Debug\net8.0\SolosApi.Application.deps.json
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Application\bin\Debug\net8.0\SolosApi.Application.dll
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Application\bin\Debug\net8.0\SolosApi.Application.pdb
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Application\bin\Debug\net8.0\SolosApi.Domain.dll
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Application\bin\Debug\net8.0\SolosApi.Domain.pdb
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Application\obj\Debug\net8.0\SolosApi.Application.csproj.AssemblyReference.cache
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Application\obj\Debug\net8.0\SolosApi.Application.GeneratedMSBuildEditorConfig.editorconfig
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Application\obj\Debug\net8.0\SolosApi.Application.AssemblyInfoInputs.cache
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Application\obj\Debug\net8.0\SolosApi.Application.AssemblyInfo.cs
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Application\obj\Debug\net8.0\SolosApi.Application.csproj.CoreCompileInputs.cache
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Application\obj\Debug\net8.0\SolosApi.453FD3EB.Up2Date
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Application\obj\Debug\net8.0\SolosApi.Application.dll
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Application\obj\Debug\net8.0\refint\SolosApi.Application.dll
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Application\obj\Debug\net8.0\SolosApi.Application.pdb
+c:\Users\Aviram\Documents\Solos-API\SolosApi.Application\obj\Debug\net8.0\ref\SolosApi.Application.dll
