@@ -42,19 +42,21 @@ def create_order_from_data(order_data, service: str) -> Order:
     )
 
 
-def populate_orders(service: str, count: int, generator: OrderGenerator) -> int:
+def populate_orders(service: str, count: int, merchant_id: int, generator: OrderGenerator) -> tuple[int, int]:
     """Generate and insert multiple orders for a service.
 
     Args:
         service: Service name ("Amazon", "Etsy", or "Shopify").
         count: Number of orders to generate.
+        merchant_id: ID of the merchant who owns these orders.
         generator: OrderGenerator instance.
 
     Returns:
-        Number of orders successfully inserted.
+        Tuple of (orders inserted, total items inserted).
     """
     print(f"Generating {count} {service} orders...")
-    inserted = 0
+    inserted_orders = 0
+    total_items = 0
 
     with get_db_connection() as conn:
         for i in range(count):
@@ -62,25 +64,71 @@ def populate_orders(service: str, count: int, generator: OrderGenerator) -> int:
             order = create_order_from_data(order_data, service)
 
             try:
-                insert_order(conn, order)
-                inserted += 1
+                insert_order(conn, order, merchant_id)
+                conn.commit()
+                inserted_orders += 1
+                # Count items in this order
+                items_count = sum(item.quantity for item in order.items)
+                total_items += items_count
 
                 # Print progress every 50 orders
                 if (i + 1) % 50 == 0:
-                    print(f"  Inserted {i + 1}/{count} orders...")
+                    print(f"  Inserted {i + 1}/{count} orders ({total_items} items so far)...")
             except Exception as e:
+                conn.rollback()
                 print(f"  Error inserting order {order.order_id}: {e}")
 
-    print(f"Successfully inserted {inserted}/{count} {service} orders\n")
-    return inserted
+    print(f"Successfully inserted {inserted_orders}/{count} {service} orders ({total_items} total items)\n")
+    return inserted_orders, total_items
+
+
+def populate_orders_target_items(service: str, target_items: int, merchant_id: int, generator: OrderGenerator) -> tuple[int, int]:
+    """Generate and insert orders until reaching target item count.
+
+    Args:
+        service: Service name ("Amazon", "Etsy", or "Shopify").
+        target_items: Target number of items to sell.
+        merchant_id: ID of the merchant who owns these orders.
+        generator: OrderGenerator instance.
+
+    Returns:
+        Tuple of (orders inserted, total items inserted).
+    """
+    print(f"Generating {service} orders to reach ~{target_items} items...")
+    inserted_orders = 0
+    total_items = 0
+
+    with get_db_connection() as conn:
+        while total_items < target_items:
+            order_data = generator.generate_order_data()
+            order = create_order_from_data(order_data, service)
+
+            try:
+                insert_order(conn, order, merchant_id)
+                conn.commit()
+                inserted_orders += 1
+                # Count items in this order
+                items_count = sum(item.quantity for item in order.items)
+                total_items += items_count
+
+                # Print progress every 20 orders
+                if inserted_orders % 20 == 0:
+                    print(f"  Inserted {inserted_orders} orders ({total_items} items so far)...")
+            except Exception as e:
+                conn.rollback()
+                print(f"  Error inserting order {order.order_id}: {e}")
+
+    print(f"Successfully inserted {inserted_orders} {service} orders ({total_items} total items)\n")
+    return inserted_orders, total_items
 
 
 def main():
     """Main function to populate database with mock orders."""
-    # Configuration
-    AMAZON_ORDERS = 100
-    ETSY_ORDERS = 300
-    SHOPIFY_ORDERS = 200
+    # Configuration - Each merchant gets orders from all services
+    # Format: (Amazon, Etsy, Shopify)
+    MERCHANT_1_ORDERS = (200, 150, 100)  # Total: 450 orders
+    MERCHANT_2_ORDERS = (150, 200, 120)  # Total: 470 orders
+    MERCHANT_3_ORDERS = (180, 160, 200)  # Total: 540 orders
 
     print("=" * 60)
     print("Mock Order Database Population Script")
@@ -90,15 +138,64 @@ def main():
     # Initialize order generator
     generator = OrderGenerator()
 
-    # Populate orders for each service
-    total_inserted = 0
-    total_inserted += populate_orders("Amazon", AMAZON_ORDERS, generator)
-    total_inserted += populate_orders("Etsy", ETSY_ORDERS, generator)
-    total_inserted += populate_orders("Shopify", SHOPIFY_ORDERS, generator)
+    # Populate orders for each merchant across all services
+    total_orders = 0
+    total_items = 0
+
+    # Merchant 1
+    print("MERCHANT 1 (mixed services)")
+    print("-" * 60)
+    orders, items = populate_orders("Amazon", MERCHANT_1_ORDERS[0], 1, generator)
+    total_orders += orders
+    total_items += items
+
+    orders, items = populate_orders("Etsy", MERCHANT_1_ORDERS[1], 1, generator)
+    total_orders += orders
+    total_items += items
+
+    orders, items = populate_orders("Shopify", MERCHANT_1_ORDERS[2], 1, generator)
+    total_orders += orders
+    total_items += items
+    print()
+
+    # Merchant 2
+    print("MERCHANT 2 (mixed services)")
+    print("-" * 60)
+    orders, items = populate_orders("Amazon", MERCHANT_2_ORDERS[0], 2, generator)
+    total_orders += orders
+    total_items += items
+
+    orders, items = populate_orders("Etsy", MERCHANT_2_ORDERS[1], 2, generator)
+    total_orders += orders
+    total_items += items
+
+    orders, items = populate_orders("Shopify", MERCHANT_2_ORDERS[2], 2, generator)
+    total_orders += orders
+    total_items += items
+    print()
+
+    # Merchant 3
+    print("MERCHANT 3 (mixed services)")
+    print("-" * 60)
+    orders, items = populate_orders("Amazon", MERCHANT_3_ORDERS[0], 3, generator)
+    total_orders += orders
+    total_items += items
+
+    orders, items = populate_orders("Etsy", MERCHANT_3_ORDERS[1], 3, generator)
+    total_orders += orders
+    total_items += items
+
+    orders, items = populate_orders("Shopify", MERCHANT_3_ORDERS[2], 3, generator)
+    total_orders += orders
+    total_items += items
 
     # Summary
     print("=" * 60)
-    print(f"Total orders inserted: {total_inserted}")
+    print(f"Total orders inserted: {total_orders}")
+    print(f"Total items sold: {total_items}")
+    print(f"Merchant 1: {sum(MERCHANT_1_ORDERS)} orders")
+    print(f"Merchant 2: {sum(MERCHANT_2_ORDERS)} orders")
+    print(f"Merchant 3: {sum(MERCHANT_3_ORDERS)} orders")
     print("=" * 60)
 
 

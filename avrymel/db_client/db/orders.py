@@ -13,12 +13,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "mock_api"))
 from models.order import Order
 
 
-def _insert_customer(conn: Connection, order: Order) -> int:
+def _insert_customer(conn: Connection, order: Order, merchant_id: int) -> int:
     """Insert or get existing customer.
 
     Args:
         conn: Database connection.
         order: Order object containing customer data.
+        merchant_id: Merchant ID to link to customer.
 
     Returns:
         Customer ID.
@@ -40,11 +41,11 @@ def _insert_customer(conn: Connection, order: Order) -> int:
     # Insert new customer
     cursor.execute(
         """
-        INSERT INTO customers (email, first_name, last_name)
-        VALUES (%s, %s, %s)
+        INSERT INTO customers (merchant_id, email, first_name, last_name)
+        VALUES (%s, %s, %s, %s)
         RETURNING id
         """,
-        (order.customer.email, order.customer.first_name, order.customer.last_name),
+        (merchant_id, order.customer.email, order.customer.first_name, order.customer.last_name),
     )
     return cursor.fetchone()[0]
 
@@ -123,28 +124,69 @@ def _insert_discount(conn: Connection, order: Order) -> Optional[int]:
     return cursor.fetchone()[0]
 
 
-def _insert_order_items(conn: Connection, order_db_id: int, order: Order) -> None:
+def _insert_or_get_product(conn: Connection, merchant_id: int, item) -> int:
+    """Insert or get existing product.
+
+    Args:
+        conn: Database connection.
+        merchant_id: Merchant ID who owns this product.
+        item: Item object containing product data.
+
+    Returns:
+        Product ID.
+    """
+    cursor = conn.cursor()
+
+    # Try to get existing product by product_id and merchant_id
+    cursor.execute(
+        """
+        SELECT id FROM products WHERE merchant_id = %s AND product_id = %s
+        """,
+        (merchant_id, item.item_id),
+    )
+    result = cursor.fetchone()
+
+    if result:
+        return result[0]
+
+    # Insert new product
+    cursor.execute(
+        """
+        INSERT INTO products (merchant_id, product_id, product_name, base_price)
+        VALUES (%s, %s, %s, %s)
+        RETURNING id
+        """,
+        (merchant_id, item.item_id, item.item_name, item.item_price),
+    )
+    return cursor.fetchone()[0]
+
+
+def _insert_order_items(conn: Connection, order_db_id: int, merchant_id: int, order: Order) -> None:
     """Insert order items.
 
     Args:
         conn: Database connection.
         order_db_id: Database ID of the order.
+        merchant_id: Merchant ID who owns the products.
         order: Order object containing items.
     """
     cursor = conn.cursor()
 
     for item in order.items:
+        # Get or create product
+        product_id = _insert_or_get_product(conn, merchant_id, item.item)
+
+        # Insert order item referencing the product
         cursor.execute(
             """
             INSERT INTO order_items (
-                order_id, item_id, item_name, variant_name, item_price, quantity
+                order_id, product_id, variant_name, price_at_purchase, quantity
             )
-            VALUES (%s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s)
             """,
             (
                 order_db_id,
-                item.item.item_id,
-                item.item.item_name,
+                product_id,
                 item.variant_name,
                 item.item.item_price,
                 item.quantity,
@@ -177,7 +219,7 @@ def _insert_fulfillment(conn: Connection, order_db_id: int, order: Order) -> Non
     )
 
 
-def insert_order(conn: Connection, order: Order) -> int:
+def insert_order(conn: Connection, order: Order, merchant_id: int) -> int:
     """Insert a complete Order into the database.
 
     This function handles inserting all related data (customer, addresses,
@@ -187,24 +229,17 @@ def insert_order(conn: Connection, order: Order) -> int:
     Args:
         conn: Database connection.
         order: Order instance to insert.
+        merchant_id: ID of the merchant who owns this order.
 
     Returns:
         The database ID of the inserted order.
-
-    Example:
-        from db.connection import get_db_connection
-        from models.order import Order
-
-        order = Order(...)  # Your order instance
-
-        with get_db_connection() as conn:
-            order_id = insert_order(conn, order)
-            print(f"Order inserted with ID: {order_id}")
     """
     cursor = conn.cursor()
 
-    # Insert related entities first
-    customer_id = _insert_customer(conn, order)
+    # Set RLS context for the current merchant
+    cursor.execute("SELECT set_current_merchant(%s)", (merchant_id,))
+
+    customer_id = _insert_customer(conn, order, merchant_id)
     billing_address_id = _insert_address(conn, order.billing_address)
     shipping_address_id = _insert_address(conn, order.shipping_address)
     discount_id = _insert_discount(conn, order)
@@ -240,7 +275,7 @@ def insert_order(conn: Connection, order: Order) -> int:
     order_db_id = cursor.fetchone()[0]
 
     # Insert order items and fulfillment
-    _insert_order_items(conn, order_db_id, order)
+    _insert_order_items(conn, order_db_id, merchant_id, order)
     _insert_fulfillment(conn, order_db_id, order)
 
     return order_db_id
