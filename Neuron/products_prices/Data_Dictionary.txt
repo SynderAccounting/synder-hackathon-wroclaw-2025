@@ -1,0 +1,17 @@
++------------------+--------------------------------------------------------------+
+│ Column Name      │ Description                                                  │
+│------------------│--------------------------------------------------------------│
++------------------+--------------------------------------------------------------+
+│ Year             | Reference Year                                               |
+| Month            | Reference Month                                              │
+│ GEO              │ Geographic region (encoded as Province 1, Province 2, etc.)  │
+│ Products         │ Name of the retail product                                   │
+│ COORDINATE       │ Internal coordinate identifier for product                   │
+│ VALUE            │ Original product price per unit (before tax)                 │
+│ UOM              │ Unit of measure (e.g., Dollars)                              │
+│ Taxable          │ 'Yes' if the product is subject to tax, 'No' otherwise       │
+│ Total tax rate   │ Total tax rate (%) based on province or average for 'Canada' │
+│ Value after tax  │ Price after tax if taxable, else same as VALUE               │
+│ Product Category │ High-level category assigned to the product                  │
+│ Essential        │ 'Essential' for basic needs or 'Non-Essential'               │
++------------------+--------------------------------------------------------------+

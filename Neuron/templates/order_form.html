@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Create Order - One Front{% endblock %}
+
+{% block content %}
+<div class="page-header form-page-header">
+    <h2>Create New Order</h2>
+</div>
+
+<form method="POST" class="form" id="orderForm">
+    <div class="form-group">
+        <label for="customer_id">Customer *</label>
+        <select id="customer_id" name="customer_id" required>
+            <option value="">Select a customer...</option>
+            {% for customer in customers %}
+            <option value="{{ customer.id }}">{{ customer.name }} ({{ customer.email }})</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="payment_method">Payment Method *</label>
+        <select id="payment_method" name="payment_method" required>
+            <option value="Cash">Cash</option>
+            <option value="Credit Card">Credit Card</option>
+            <option value="Debit Card">Debit Card</option>
+            <option value="Mobile Payment">Mobile Payment</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="shipping_address">Shipping Address</label>
+        <textarea id="shipping_address" name="shipping_address" rows="2"></textarea>
+    </div>
+
+    <h3>Order Items</h3>
+    <div id="orderItems">
+        <div class="order-item-row">
+            <div class="form-group">
+                <label>Product</label>
+                <select name="product_id[]" required>
+                    <option value="">Select a product...</option>
+                    {% for product in products %}
+                    <option value="{{ product.id }}" data-price="{{ product.price }}" data-stock="{{ product.stock_quantity }}">
+                        {{ product.name }} - ${{ "%.2f"|format(product.price) }} (Stock: {{ product.stock_quantity }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" name="quantity[]" min="1" max="999999" value="1" required class="quantity-input">
+            </div>
+            <div class="form-group">
+                <label>&nbsp;</label>
+                <button type="button" class="btn btn-danger" onclick="removeItem(this)">Remove</button>
+            </div>
+        </div>
+    </div>
+
+    <button type="button" class="btn btn-secondary" onclick="addOrderItem()">Add Another Item</button>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Create Order</button>
+        <a href="{{ url_for('orders') }}" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+
+<script>
+// Update quantity max based on selected product stock
+function updateQuantityMax(selectElement) {
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const stock = selectedOption.getAttribute('data-stock');
+    const quantityInput = selectElement.closest('.order-item-row').querySelector('.quantity-input');
+
+    if (stock) {
+        quantityInput.max = stock;
+        // If current value exceeds stock, set it to max stock
+        if (parseInt(quantityInput.value) > parseInt(stock)) {
+            quantityInput.value = stock;
+        }
+    }
+}
+
+// Add event listeners to all product selects
+document.addEventListener('DOMContentLoaded', function() {
+    const productSelects = document.querySelectorAll('select[name="product_id[]"]');
+    productSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            updateQuantityMax(this);
+        });
+    });
+});
+
+function addOrderItem() {
+    const container = document.getElementById('orderItems');
+    const newRow = container.firstElementChild.cloneNode(true);
+    newRow.querySelector('select').selectedIndex = 0;
+    newRow.querySelector('input[type="number"]').value = 1;
+    newRow.querySelector('input[type="number"]').max = 999999;
+
+    // Add event listener to new select
+    newRow.querySelector('select').addEventListener('change', function() {
+        updateQuantityMax(this);
+    });
+
+    container.appendChild(newRow);
+}
+
+function removeItem(btn) {
+    const container = document.getElementById('orderItems');
+    if (container.children.length > 1) {
+        btn.closest('.order-item-row').remove();
+    } else {
+        alert('Order must have at least one item');
+    }
+}
+
+// Validate form before submission
+document.getElementById('orderForm').addEventListener('submit', function(e) {
+    const rows = document.querySelectorAll('.order-item-row');
+    let hasError = false;
+
+    rows.forEach(row => {
+        const select = row.querySelector('select[name="product_id[]"]');
+        const quantityInput = row.querySelector('.quantity-input');
+        const selectedOption = select.options[select.selectedIndex];
+        const stock = parseInt(selectedOption.getAttribute('data-stock'));
+        const quantity = parseInt(quantityInput.value);
+        const productName = selectedOption.text.split(' - ')[0];
+
+        if (quantity > stock) {
+            alert(`Cannot order ${quantity} units of '${productName}'. Only ${stock} units available in stock.`);
+            hasError = true;
+        }
+    });
+
+    if (hasError) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

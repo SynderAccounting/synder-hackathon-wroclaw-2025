@@ -1,0 +1,12 @@
+.claude/
+.vscode/
+static/uploads/
+retail_crms.db
+__pycache__
+.env
+env/
+venv/
+retail_crms.db
+retail_crms.db-shm
+retail_crms.db-wal
+*.db

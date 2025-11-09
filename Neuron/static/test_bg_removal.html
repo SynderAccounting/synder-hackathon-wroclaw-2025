@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Background Removal Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .preview-item {
+            display: inline-block;
+            margin: 10px;
+            cursor: pointer;
+            position: relative;
+        }
+        .preview-item img {
+            max-width: 200px;
+            border: 2px solid #ccc;
+        }
+        .selected-for-bg-removal {
+            outline: 3px solid #007bff;
+            outline-offset: 2px;
+        }
+        .selected-for-bg-removal::after {
+            content: '✓';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .btn {
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+    </style>
+</head>
+<body>
+    <h1>Background Removal Test</h1>
+    <p>Select an image, click on it to select for background removal, then click the button.</p>
+
+    <input type="file" id="photos" accept="image/png,image/jpeg,image/jpg" />
+    <div id="photo-preview"></div>
+
+    <div id="background-removal-controls" style="display: none; margin-top: 20px;">
+        <button type="button" id="remove-bg-btn" class="btn btn-secondary">Remove Background from Selected</button>
+        <div id="bg-removal-status" style="margin-top: 10px; display: none;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="spinner"></div>
+                <span id="bg-removal-text" style="color: #007bff; font-weight: 500;">Processing images...</span>
+            </div>
+            <div id="bg-removal-progress" style="margin-top: 5px; font-size: 0.9em; color: #666;"></div>
+        </div>
+    </div>
+
+    <script>
+        function dataURLToBase64(dataURL) {
+            return dataURL.split(',')[1];
+        }
+
+        document.getElementById('photos').addEventListener('change', function(e) {
+            const preview = document.getElementById('photo-preview');
+            const controls = document.getElementById('background-removal-controls');
+
+            if (e.target.files.length > 0) {
+                controls.style.display = 'block';
+            } else {
+                controls.style.display = 'none';
+            }
+
+            preview.innerHTML = '';
+            const files = Array.from(e.target.files);
+
+            files.forEach((file, index) => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const div = document.createElement('div');
+                        div.className = 'preview-item';
+
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+
+                        div.onclick = function(event) {
+                            event.stopPropagation();
+                            div.classList.toggle('selected-for-bg-removal');
+                        };
+
+                        div.appendChild(img);
+                        preview.appendChild(div);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const removeBgBtn = document.getElementById('remove-bg-btn');
+
+            if (!removeBgBtn) {
+                console.error('Remove background button not found');
+                return;
+            }
+
+            console.log('✓ Background removal button found, attaching event listener...');
+
+            removeBgBtn.addEventListener('click', async function() {
+                console.log('✓ Button clicked!');
+
+                const preview = document.getElementById('photo-preview');
+                const selectedImages = preview.querySelectorAll('.preview-item.selected-for-bg-removal img');
+                const statusDiv = document.getElementById('bg-removal-status');
+                const statusText = document.getElementById('bg-removal-text');
+                const progressDiv = document.getElementById('bg-removal-progress');
+
+                if (selectedImages.length === 0) {
+                    alert('Please select at least one image to remove background from');
+                    return;
+                }
+
+                console.log(`Processing ${selectedImages.length} image(s)...`);
+
+                statusDiv.style.display = 'block';
+                this.disabled = true;
+                this.textContent = 'Processing...';
+
+                const totalImages = selectedImages.length;
+                let processedCount = 0;
+                let errorCount = 0;
+
+                try {
+                    for (let i = 0; i < selectedImages.length; i++) {
+                        const img = selectedImages[i];
+
+                        statusText.textContent = `Processing image ${i + 1} of ${totalImages}...`;
+                        progressDiv.textContent = `Completed: ${processedCount} | Errors: ${errorCount}`;
+
+                        const base64Data = dataURLToBase64(img.src);
+
+                        if (!base64Data) {
+                            console.error('Could not extract base64 data from image');
+                            errorCount++;
+                            continue;
+                        }
+
+                        try {
+                            console.log(`Sending request to API for image ${i + 1}...`);
+                            const response = await fetch('/api/remove_background', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    image_data: base64Data
+                                })
+                            });
+
+                            const result = await response.json();
+
+                            if (result.success && result.processed_image) {
+                                console.log(`✓ Image ${i + 1} processed successfully`);
+                                img.src = result.processed_image;
+
+                                const container = img.parentElement;
+                                container.classList.remove('selected-for-bg-removal');
+
+                                processedCount++;
+                            } else {
+                                console.error('Error processing image:', result.error);
+                                errorCount++;
+                                if (totalImages === 1) {
+                                    alert('Error processing image: ' + (result.error || 'Unknown error'));
+                                }
+                            }
+                        } catch (fetchError) {
+                            console.error('Error fetching:', fetchError);
+                            errorCount++;
+                        }
+                    }
+
+                    if (errorCount === 0) {
+                        statusText.textContent = `Successfully processed ${processedCount} image(s)!`;
+                        statusText.style.color = '#28a745';
+                        setTimeout(() => {
+                            statusDiv.style.display = 'none';
+                            statusText.style.color = '#007bff';
+                        }, 3000);
+                    } else {
+                        statusText.textContent = `Completed with ${errorCount} error(s)`;
+                        statusText.style.color = '#dc3545';
+                        progressDiv.textContent = `Successfully processed: ${processedCount} | Failed: ${errorCount}`;
+                        if (errorCount > 0 && totalImages > 1) {
+                            alert(`Background removal completed with ${errorCount} error(s). ${processedCount} image(s) processed successfully.`);
+                        }
+                        setTimeout(() => {
+                            statusDiv.style.display = 'none';
+                            statusText.style.color = '#007bff';
+                        }, 5000);
+                    }
+                } catch (error) {
+                    console.error('Error in background removal:', error);
+                    statusText.textContent = 'Error occurred!';
+                    statusText.style.color = '#dc3545';
+                    alert('Error removing background: ' + error.message);
+                    setTimeout(() => {
+                        statusDiv.style.display = 'none';
+                        statusText.style.color = '#007bff';
+                    }, 3000);
+                } finally {
+                    this.disabled = false;
+                    this.textContent = 'Remove Background from Selected';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

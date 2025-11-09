@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block title %}Orders - One Front{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="fas fa-shopping-cart"></i> Orders</h2>
+    <a href="{{ url_for('add_order') }}" class="btn btn-primary"><i class="fas fa-plus" style="margin-right: 10px;"></i>Create New Order</a>
+</div>
+
+<div class="section">
+    {% if orders %}
+    <table class="data-table enhanced-table">
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Order Date</th>
+                <th>Total Amount</th>
+                <th>Payment Method</th>
+                <th>Status</th>
+                <th>Invoice</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr id="order-row-{{ order.id }}">
+                <td><a href="{{ url_for('order_detail', order_id=order.id) }}" class="order-id">#{{ order.id }}</a></td>
+                <td><strong>{{ order.customer_name }}</strong></td>
+                <td>{{ order.order_date[:16] }}</td>
+                <td class="amount-cell">${{ "%.2f"|format(order.total_amount) }}</td>
+                <td><span class="payment-badge">{{ order.payment_method }}</span></td>
+                <td><span class="badge badge-{{ order.status }}">{{ order.status }}</span></td>
+                <td id="invoice-cell-{{ order.id }}">
+                    {% if order.invoice_number %}
+                        <a href="#" onclick="showInvoiceModal({{ order.id }}, event)" class="invoice-link">{{ order.invoice_number }}</a>
+                    {% else %}
+                        <button onclick="generateInvoice({{ order.id }})" class="btn btn-small" style="background: #28a745; color: white;">Invoice</button>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('order_detail', order_id=order.id) }}" class="btn btn-primary btn-small" style="color:white; text-align: center;">View Details</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state-small">
+        <h3>No Orders Found</h3>
+        <p>Start by creating your first order.</p>
+        <a href="{{ url_for('add_order') }}" class="btn btn-primary">Create New Order</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal for displaying invoice -->
+<div id="invoiceModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 90%; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header">
+            <h3 id="modalInvoiceTitle">Invoice Details</h3>
+            <span class="close" onclick="closeModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="invoiceContent">
+                <!-- Invoice content will be loaded here -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+            <button class="btn btn-primary" onclick="printInvoice()">Print Invoice</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal backdrop -->
+<div id="modalBackdrop" class="modal-backdrop" style="display: none;" onclick="closeModal()"></div>
+
+<script>
+function generateInvoice(orderId) {
+    const button = document.querySelector(`#invoice-cell-${orderId} button`);
+    const originalText = button.textContent;
+
+    // Disable button and show loading state
+    button.disabled = true;
+    button.textContent = 'Generating...';
+
+    // Make POST request to generate invoice
+    fetch(`/orders/${orderId}/generate_invoice`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Replace button with clickable invoice number
+            const cell = document.getElementById(`invoice-cell-${orderId}`);
+            cell.innerHTML = `<a href="#" onclick="showInvoiceModal(${orderId}, event)" class="invoice-link">${data.invoice_number}</a>`;
+
+            // Show success message
+            alert(`Invoice generated successfully: ${data.invoice_number}`);
+
+            // Optional: You can log the full invoice data or send it to another endpoint
+            console.log('Invoice Data:', data.invoice);
+        } else {
+            // Show error message
+            alert(`Error: ${data.error}`);
+            button.disabled = false;
+            button.textContent = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to generate invoice. Please try again.');
+        button.disabled = false;
+        button.textContent = originalText;
+    });
+}
+
+function showInvoiceModal(orderId, event) {
+    if (event) event.preventDefault();
+
+    // Show loading in modal
+    document.getElementById('modalInvoiceTitle').textContent = 'Loading Invoice...';
+    document.getElementById('invoiceContent').innerHTML = '<p>Loading...</p>';
+    document.getElementById('invoiceModal').style.display = 'block';
+    document.getElementById('modalBackdrop').style.display = 'block';
+
+    // Fetch invoice by order ID
+    fetch(`/api/invoice_by_order/${orderId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('modalInvoiceTitle').textContent = `Invoice: ${data.invoice_number}`;
+
+                // Create invoice HTML content
+                let htmlContent = `
+                    <div class="invoice-preview">
+                        <div class="invoice-header">
+                            <h1>VAT Invoice</h1>
+                            <p><strong>Invoice Number:</strong> ${data.invoice_number}</p>
+                            <p><strong>Issue Date:</strong> ${data.issue_date}</p>
+                            <p><strong>Supply Date:</strong> ${data.supply_date}</p>
+                        </div>
+
+                        <div class="invoice-parties">
+                            <div class="invoice-party">
+                                <h4>Seller:</h4>
+                                <p><strong>${data.supplier_name}</strong><br>
+                                ${data.supplier_address.replace(/\n/g, '<br>')}<br>
+                                NIP: ${data.supplier_nip}</p>
+                            </div>
+                            <div class="invoice-party">
+                                <h4>Buyer:</h4>
+                                <p><strong>${data.customer_name}</strong><br>
+                                ${data.customer_address.replace(/\n/g, '<br>')}<br>
+                                ${data.customer_nip ? 'NIP: ' + data.customer_nip : ''}</p>
+                            </div>
+                        </div>
+
+                        <div class="invoice-items">
+                            <h4>Invoice Items:</h4>
+                            <table class="invoice-table">
+                                <thead>
+                                    <tr>
+                                        <th>No.</th>
+                                        <th>Description</th>
+                                        <th>Quantity</th>
+                                        <th>Net Price</th>
+                                        <th>VAT</th>
+                                        <th>Net Total</th>
+                                        <th>VAT Amount</th>
+                                        <th>Gross Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+
+                let itemIndex = 1;
+                for (const item of data.items) {
+                    htmlContent += `
+                        <tr>
+                            <td>${itemIndex++}</td>
+                            <td>${item.item}</td>
+                            <td>${item.quantity}</td>
+                            <td>${item.unit_price_net.toFixed(2)}</td>
+                            <td>${(item.vat_rate * 100).toFixed(2)}%</td>
+                            <td>${item.net_total.toFixed(2)}</td>
+                            <td>${item.vat_amount.toFixed(2)}</td>
+                            <td>${item.gross_total.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }
+
+                htmlContent += `
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="invoice-totals">
+                            <div class="totals-summary">
+                                <p><strong>Total Net: ${data.overall_net_total.toFixed(2)} ${data.currency}</strong></p>
+                                <p><strong>Total VAT: ${data.overall_vat_amount.toFixed(2)} ${data.currency}</strong></p>
+                                <hr>
+                                <h4><strong>Amount Due: ${data.overall_gross_total.toFixed(2)} ${data.currency}</strong></h4>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('invoiceContent').innerHTML = htmlContent;
+            } else {
+                document.getElementById('invoiceContent').innerHTML = `<p>Error loading invoice: ${data.error}</p>`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('invoiceContent').innerHTML = '<p>Error loading invoice. Please try again.</p>';
+        });
+}
+
+function closeModal() {
+    document.getElementById('invoiceModal').style.display = 'none';
+    document.getElementById('modalBackdrop').style.display = 'none';
+}
+
+function printInvoice() {
+    // Get the invoice content and print it
+    const printContent = document.getElementById('invoiceContent').innerHTML;
+    const originalContent = document.body.innerHTML;
+
+    document.body.innerHTML = `
+        <html>
+            <head>
+                <title>Invoice ${document.getElementById('modalInvoiceTitle').textContent}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    .invoice-header, .invoice-parties, .invoice-items, .invoice-totals { margin: 1rem 0; }
+                    .invoice-party { width: 50%; display: inline-block; vertical-align: top; }
+                    .invoice-table { width: 100%; border-collapse: collapse; }
+                    .invoice-table th, .invoice-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    .invoice-table th { background-color: #f2f2f2; }
+                    .totals-summary { background-color: #f9f9f9; padding: 15px; border-radius: 5px; }
+                </style>
+            </head>
+            <body>${printContent}</body>
+        </html>
+    `;
+
+    window.print();
+    document.body.innerHTML = originalContent;
+}
+
+// Add styling for the modal
+const modalStyles = document.createElement('style');
+modalStyles.textContent = `
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1000;
+    }
+    .modal-content {
+        background-color: white;
+        margin: 2% auto;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        position: relative;
+    }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+    .modal-body {
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+    }
+    .close {
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 999;
+    }
+    .invoice-link {
+        color: #3498db;
+        text-decoration: underline;
+        cursor: pointer;
+        font-weight: 500;
+    }
+    .invoice-link:hover {
+        color: #2980b9;
+        text-decoration: none;
+    }
+    .invoice-preview {
+        font-family: Arial, sans-serif;
+    }
+    .invoice-header h1 {
+        margin: 0;
+        color: #2c3e50;
+    }
+    .invoice-parties {
+        display: flex;
+        gap: 2rem;
+        margin: 1.5rem 0;
+    }
+    .invoice-party {
+        flex: 1;
+    }
+    .invoice-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+    }
+    .invoice-table th, .invoice-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    .invoice-table th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+    }
+    .totals-summary {
+        background-color: #f9f9f9;
+        padding: 15px;
+        border-radius: 5px;
+        margin-top: 1.5rem;
+    }
+`;
+document.head.appendChild(modalStyles);
+</script>
+
+{% endblock %}

@@ -1,0 +1,897 @@
+{% extends "base.html" %}
+
+{% block title %}{% if product %}Edit{% else %}Add{% endif %} Product - One Front{% endblock %}
+
+{% block content %}
+<div class="page-header form-page-header">
+    <h2>{% if product %}Edit{% else %}Add New{% endif %} Product</h2>
+</div>
+
+<form method="POST" action="{% if product %}{{ url_for('edit_product', product_id=product.id) }}{% else %}{{ url_for('add_product') }}{% endif %}" enctype="multipart/form-data" class="form product-form">
+    <div>
+
+    {% if product and product_photos %}
+    <div class="form-group">
+        <label>Current Photos</label>
+        <div class="photo-gallery">
+            {% for photo in product_photos %}
+            <div class="photo-gallery-item {% if photo.is_main %}main-photo{% endif %}">
+                <img src="{{ url_for('static', filename='uploads/products/' + photo.photo_path) }}" alt="{{ product.name }}">
+                {% if photo.is_main %}
+                <span class="photo-badge main">Main Photo</span>
+                {% endif %}
+                <div class="photo-actions">
+                    {% if not photo.is_main %}
+                    <form method="POST" action="{{ url_for('set_main_photo', product_id=product.id, photo_id=photo.id) }}" style="display: inline;">
+                        <button type="submit" class="btn btn-small btn-primary">Set as Main</button>
+                    </form>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('delete_product_photo', product_id=product.id, photo_id=photo.id) }}" style="display: inline;">
+                        <button type="submit" class="btn btn-small btn-danger" onclick="return confirm('Delete this photo?')">Delete</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="form-group">
+        <label for="photos">{% if product %}Add More Photos{% else %}Product Photos{% endif %}</label>
+        <input type="file" id="photos" name="photos" multiple accept="image/png,image/jpeg,image/jpg,image/gif,image/webp">
+        <small class="form-hint">You can select multiple photos. {% if not product %}The first photo will be set as the main photo.{% endif %}</small>
+        <div id="photo-preview" class="photo-preview"></div>
+        <div id="background-removal-controls" style="margin-top: 10px; display: none;">
+            <button type="button" id="remove-bg-btn" class="btn btn-secondary">Remove Background from Selected</button>
+            <div id="bg-removal-status" style="margin-left: 10px; margin-top: 10px; display: none;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="spinner"></div>
+                    <span id="bg-removal-text" style="color: #007bff; font-weight: 500;">Processing images...</span>
+                </div>
+                <div id="bg-removal-progress" style="margin-top: 5px; font-size: 0.9em; color: #666;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <div id="technical-details" style="margin-top: 10px;">
+            <label for="technical_details">Details *(mandatory)</label>
+            <textarea id="technical_details" name="technical_details" rows="3" placeholder="Enter technical specifications, features, dimensions, materials, etc.">{{ product.technical_details if product and product.technical_details else '' }}</textarea>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="name">Product Name *</label>
+        <input type="text" id="name" name="name" value="{{ product.name if product else '' }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="category">Category</label>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+            <input type="text" id="category" name="category" value="{{ product.category if product else '' }}"
+                   placeholder="e.g., Electronics, Clothing, Food">
+            <button type="button" id="generate-category-btn" class="btn btn-secondary" style="width: 300px; height: 45px;">Generate Category</button>
+        </div>
+        <div id="suggested-categories" style="margin-top: 5px; display: none;">
+            <small>Suggested categories: <span id="categories-list"></span></small>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="price">Price *</label>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+            <input type="number" id="price" name="price" step="0.01" min="0"
+                   value="{{ product.price if product else '' }}" required style="flex: 1;">
+            <button type="button" id="generate-price-btn" class="btn btn-secondary" style="height: 45px;">Suggest Price</button>
+        </div>
+        <div id="price-suggestion-info" style="margin-top: 5px; display: none;">
+            <small>Price suggestion: <span id="price-suggestion"></span></small>
+            <div id="price-reasoning" style="margin-top: 5px; font-size: 0.9em; color: #666;"></div>
+            <div id="price-range" style="margin-top: 3px; font-size: 0.9em; color: #666;"></div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="stock_quantity">Stock Quantity *</label>
+        <input type="number" id="stock_quantity" name="stock_quantity" min="0"
+               value="{{ product.stock_quantity if product else '0' }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="vat_rate">VAT Rate</label>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+            <select id="vat_rate" name="vat_rate" required>
+                {% for rate_key, rate_info in vat_rates.items() %}
+                <option value="{{ rate_info.rate }}" {% if product and product.vat_rate == rate_info.rate %}selected{% elif not product and rate_key == 'standard' %}selected{% endif %}>
+                    {{ rate_info.label }}
+                </option>
+                {% endfor %}
+            </select>
+            <button type="button" id="suggest-vat-btn" class="btn btn-secondary" style="height: 45px;">Suggest VAT Rate</button>
+        </div>
+        <small class="form-hint">Select the appropriate VAT rate for this product according to Polish tax regulations or use the AI suggestion</small>
+        <div id="vat-suggestion-info" style="margin-top: 5px; display: none;">
+            <small>AI Suggested Rate: <span id="vat-suggestion"></span></small>
+            <div id="vat-reasoning" style="margin-top: 5px; font-size: 0.9em; color: #666;"></div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="description">Description</label>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+            <textarea id="description" name="description" rows="4" style="float: left;">{{ product.description if product else '' }}</textarea>
+            <button type="button" id="generate-description-btn" class="btn btn-secondary" style="float: left; width: 300px;">Generate Description</button>
+        </div>
+        <div id="loading-indicator" style="display: none; text-align: center; margin-top: 10px;">
+            <p>Generating description... This may take a moment.</p>
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary" id="product-submit-btn">{% if product %}Update{% else %}Create{% endif %} Product</button>
+        <span id="submit-spinner" class="spinner" style="display: none;"></span>
+        <a href="{{ url_for('products') }}" class="btn btn-secondary">Cancel</a>
+        {% if product %}
+        <button type="button" class="btn btn-danger" onclick="deleteProduct({{ product.id }})">Delete Product</button>
+        {% endif %}
+    </div>
+
+
+    </div>
+</form>
+
+<style>
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.suggested-cat {
+  background-color: #e9ecef;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin: 0 2px;
+}
+
+.selected-for-bg-removal {
+  outline: 3px solid #007bff;
+  outline-offset: 2px;
+  position: relative;
+}
+
+.selected-for-bg-removal::after {
+  content: '✓';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: #007bff;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+</style>
+
+<script>
+document.getElementById('photos').addEventListener('change', function(e) {
+    const preview = document.getElementById('photo-preview');
+    const controls = document.getElementById('background-removal-controls');
+
+    // Show background removal controls if images are selected
+    if (e.target.files.length > 0) {
+        controls.style.display = 'block';
+    } else {
+        controls.style.display = 'none';
+    }
+
+    preview.innerHTML = '';
+
+    const files = Array.from(e.target.files);
+
+    files.forEach((file, index) => {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'preview-item';
+
+                const img = document.createElement('img');
+                img.src = e.target.result;
+
+                const label = document.createElement('div');
+                label.className = 'preview-label';
+                label.textContent = index === 0 && !{{ 'true' if product else 'false' }} ? 'Main Photo' : `Photo ${index + 1}`;
+
+                // Add click event to select the image for background removal
+                div.onclick = function(event) {
+                    // Prevent the click from interfering with any other functionality
+                    event.stopPropagation();
+                    div.classList.toggle('selected-for-bg-removal');
+                };
+
+                div.appendChild(img);
+                div.appendChild(label);
+                preview.appendChild(div);
+            };
+
+            reader.readAsDataURL(file);
+        }
+    });
+});
+
+// Function to get image data for description generation
+function getImagesAsBase64() {
+    const imageElements = document.querySelectorAll('#photo-preview img');
+    const base64Images = [];
+
+    imageElements.forEach(img => {
+        if (img.src.startsWith('data:')) {
+            base64Images.push(img.src);
+        }
+    });
+
+    return base64Images;
+}
+
+// Function to generate description
+document.getElementById('generate-description-btn').addEventListener('click', async function() {
+    const productName = document.getElementById('name').value;
+    const technicalDetails = document.getElementById('technical_details').value;
+    const descriptionTextarea = document.getElementById('description');
+    const loadingIndicator = document.getElementById('loading-indicator');
+
+    if (!technicalDetails.trim()) {
+        alert('Please enter technical details before generating description.');
+        return;
+    }
+
+    // Get product ID if we're editing an existing product
+    const currentUrl = window.location.href;
+    const isEdit = currentUrl.includes('/edit');
+    let productId = null;
+    if (isEdit) {
+        // Extract product ID from the URL
+        const urlParts = currentUrl.split('/');
+        productId = urlParts[urlParts.indexOf('edit') - 1];
+        if (productId) {
+            productId = parseInt(productId);
+        }
+    }
+
+    // Show loading indicator
+    loadingIndicator.style.display = 'block';
+    this.disabled = true;
+    this.textContent = 'Generating...';
+
+    try {
+        const imageBase64 = getImagesAsBase64();
+
+        const response = await fetch('/api/generate_description', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                product_name: productName,
+                product_details: technicalDetails,
+                images: imageBase64,
+                product_id: productId || null
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.error) {
+            alert('Error generating description: ' + result.error);
+        } else {
+            if (result.description) {
+                descriptionTextarea.value = result.description;
+
+                // Update title if it's different from current
+                if (result.title && result.title !== productName) {
+                    if (confirm('Would you like to update the product name with the AI-generated title?')) {
+                        document.getElementById('name').value = result.title;
+                    }
+                }
+            } else {
+                alert('Could not generate description. Please try again.');
+            }
+        }
+    } catch (error) {
+        alert('Error generating description: ' + error.message);
+    } finally {
+        // Hide loading indicator
+        loadingIndicator.style.display = 'none';
+        this.disabled = false;
+        this.textContent = 'Generate Description';
+    }
+});
+
+// Function to generate category
+document.getElementById('generate-category-btn').addEventListener('click', async function() {
+    const productName = document.getElementById('name').value;
+    const technicalDetails = document.getElementById('technical_details').value;
+    const categoryInput = document.getElementById('category');
+    const loadingIndicator = document.getElementById('loading-indicator');
+
+    if (!technicalDetails.trim()) {
+        alert('Please enter technical details before generating category.');
+        return;
+    }
+
+    // Get product ID if we're editing an existing product
+    const currentUrl = window.location.href;
+    const isEdit = currentUrl.includes('/edit');
+    let productId = null;
+    if (isEdit) {
+        // Extract product ID from the URL
+        const urlParts = currentUrl.split('/');
+        productId = urlParts[urlParts.indexOf('edit') - 1];
+        if (productId) {
+            productId = parseInt(productId);
+        }
+    }
+
+    // Show loading indicator
+    loadingIndicator.style.display = 'block';
+    this.disabled = true;
+    this.textContent = 'Generating...';
+
+    try {
+        const imageBase64 = getImagesAsBase64();
+
+        const response = await fetch('/api/generate_category', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                product_name: productName,
+                product_details: technicalDetails,
+                images: imageBase64,
+                product_id: productId || null
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.error) {
+            alert('Error generating category: ' + result.error);
+        } else {
+            if (result.categories && result.categories.length > 0) {
+                // Use the first category as the primary one
+                categoryInput.value = result.categories[0];
+
+                // Show all suggested categories
+                const categoriesList = document.getElementById('categories-list');
+                const suggestedDiv = document.getElementById('suggested-categories');
+
+                if (result.categories.length > 1) {
+                    // Show additional categories as suggestions
+                    categoriesList.innerHTML = result.categories.map((cat, index) => {
+                        if (index === 0) {
+                            return `<strong>${cat}</strong>`; // Bold the primary category
+                        } else {
+                            return `<span class="suggested-cat">${cat}</span>`;
+                        }
+                    }).join(', ');
+                    suggestedDiv.style.display = 'block';
+                } else {
+                    suggestedDiv.style.display = 'none';
+                }
+            } else if (result.category) {
+                // For backward compatibility
+                categoryInput.value = result.category;
+                document.getElementById('suggested-categories').style.display = 'none';
+            } else {
+                alert('Could not generate category. Please try again.');
+            }
+        }
+    } catch (error) {
+        alert('Error generating category: ' + error.message);
+    } finally {
+        // Hide loading indicator
+        loadingIndicator.style.display = 'none';
+        this.disabled = false;
+        this.textContent = 'Generate Category';
+    }
+});
+
+// Function to generate price prediction
+document.getElementById('generate-price-btn').addEventListener('click', async function() {
+    const productName = document.getElementById('name').value;
+    const technicalDetails = document.getElementById('technical_details').value;
+    const brandInput = document.getElementById('name').value; // Use product name as brand if not specified elsewhere
+    const priceInput = document.getElementById('price');
+    const loadingIndicator = document.getElementById('loading-indicator');
+
+    if (!technicalDetails.trim()) {
+        alert('Please enter technical details before generating price suggestion.');
+        return;
+    }
+
+    // Get product ID if we're editing an existing product
+    const currentUrl = window.location.href;
+    const isEdit = currentUrl.includes('/edit');
+    let productId = null;
+    if (isEdit) {
+        // Extract product ID from the URL
+        const urlParts = currentUrl.split('/');
+        productId = urlParts[urlParts.indexOf('edit') - 1];
+        if (productId) {
+            productId = parseInt(productId);
+        }
+    }
+
+    // Extract brand from product name or other field if needed
+    // For now, using the first word of product name as a simple brand extraction
+    let brand = '';
+    if (productName.trim()) {
+        const nameParts = productName.trim().split(' ');
+        if (nameParts.length > 0) {
+            brand = nameParts[0]; // Use first word as brand
+        }
+    }
+
+    // Show loading indicator
+    loadingIndicator.style.display = 'block';
+    this.disabled = true;
+    this.textContent = 'Suggesting...';
+
+    try {
+        const imageBase64 = getImagesAsBase64();
+
+        const response = await fetch('/api/generate_price', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                product_name: productName,
+                product_details: technicalDetails,
+                brand: brand,
+                images: imageBase64,
+                product_id: productId || null
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.error) {
+            alert('Error generating price suggestion: ' + result.error);
+        } else {
+            if (result.predicted_price !== undefined) {
+                // Update the price input with the suggested price (rounded to 2 decimal places)
+                priceInput.value = parseFloat(result.predicted_price).toFixed(2);
+
+                // Show the price suggestion details
+                const suggestionInfo = document.getElementById('price-suggestion-info');
+                const suggestionSpan = document.getElementById('price-suggestion');
+                const reasoningDiv = document.getElementById('price-reasoning');
+                const rangeDiv = document.getElementById('price-range');
+
+                suggestionSpan.innerHTML = `<strong>$${parseFloat(result.predicted_price).toFixed(2)}</strong>`;
+
+                if (result.reasoning) {
+                    reasoningDiv.innerHTML = `<strong>Reasoning:</strong> ${result.reasoning}`;
+                }
+
+                if (result.price_range) {
+                    rangeDiv.innerHTML = `<strong>Range:</strong> $${parseFloat(result.price_range.min).toFixed(2)} - $${parseFloat(result.price_range.max).toFixed(2)} (${result.market_positioning || 'market position'})`;
+                }
+
+                suggestionInfo.style.display = 'block';
+            } else {
+                alert('Could not generate price suggestion. Please try again.');
+            }
+        }
+    } catch (error) {
+        alert('Error generating price suggestion: ' + error.message);
+    } finally {
+        // Hide loading indicator
+        loadingIndicator.style.display = 'none';
+        this.disabled = false;
+        this.textContent = 'Suggest Price';
+    }
+});
+
+function deleteProduct(productId) {
+    if (confirm('Are you sure you want to delete this product? This will also delete the product from all synchronized shops.')) {
+        // Create a temporary form and submit it to delete the product
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/products/' + productId + '/delete';
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Utility function to convert data URL to base64
+function dataURLToBase64(dataURL) {
+    return dataURL.split(',')[1]; // Get the base64 part after the comma
+}
+
+// Background removal functionality
+// Wait for DOM to be ready before attaching event listeners
+(function() {
+    console.log('Background removal script loaded');
+
+    function initBackgroundRemoval() {
+        const removeBgBtn = document.getElementById('remove-bg-btn');
+
+        if (!removeBgBtn) {
+            console.error('Remove background button not found');
+            return;
+        }
+
+        console.log('✓ Background removal button found, attaching event listener...');
+
+        // Add background removal button functionality
+        removeBgBtn.addEventListener('click', async function() {
+            console.log('✓ Remove background button clicked!');
+
+            const preview = document.getElementById('photo-preview');
+            const selectedImages = preview.querySelectorAll('.preview-item.selected-for-bg-removal img');
+            const statusDiv = document.getElementById('bg-removal-status');
+            const statusText = document.getElementById('bg-removal-text');
+            const progressDiv = document.getElementById('bg-removal-progress');
+
+            if (selectedImages.length === 0) {
+                alert('Please select at least one image to remove background from');
+                return;
+            }
+
+            // Show processing status
+            statusDiv.style.display = 'block';
+            this.disabled = true;
+            this.textContent = 'Processing...';
+
+            const totalImages = selectedImages.length;
+            let processedCount = 0;
+            let errorCount = 0;
+
+            try {
+                for (let i = 0; i < selectedImages.length; i++) {
+                    const img = selectedImages[i];
+
+                    // Update progress
+                    statusText.textContent = `Processing image ${i + 1} of ${totalImages}...`;
+                    progressDiv.textContent = `Completed: ${processedCount} | Errors: ${errorCount}`;
+
+                    // Extract base64 data from the data URL
+                    const base64Data = dataURLToBase64(img.src);
+
+                    if (!base64Data) {
+                        console.error('Could not extract base64 data from image');
+                        errorCount++;
+                        continue;
+                    }
+
+                    try {
+                        // Send request to background removal API
+                        const response = await fetch('/api/remove_background', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                image_data: base64Data
+                            })
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success && result.processed_image) {
+                            // Update the image source with the processed image
+                            img.src = result.processed_image;
+
+                            // Deselect the image after processing
+                            const container = img.parentElement;
+                            container.classList.remove('selected-for-bg-removal');
+
+                            processedCount++;
+                        } else {
+                            console.error('Error processing image:', result.error);
+                            errorCount++;
+                            if (totalImages === 1) {
+                                alert('Error processing image: ' + (result.error || 'Unknown error'));
+                            }
+                        }
+                    } catch (fetchError) {
+                        console.error('Error fetching:', fetchError);
+                        errorCount++;
+                    }
+                }
+
+                // Show final status
+                if (errorCount === 0) {
+                    statusText.textContent = `Successfully processed ${processedCount} image(s)!`;
+                    statusText.style.color = '#28a745';
+                    setTimeout(() => {
+                        statusDiv.style.display = 'none';
+                        statusText.style.color = '#007bff';
+                    }, 3000);
+                } else {
+                    statusText.textContent = `Completed with ${errorCount} error(s)`;
+                    statusText.style.color = '#dc3545';
+                    progressDiv.textContent = `Successfully processed: ${processedCount} | Failed: ${errorCount}`;
+                    if (errorCount > 0 && totalImages > 1) {
+                        alert(`Background removal completed with ${errorCount} error(s). ${processedCount} image(s) processed successfully.`);
+                    }
+                    setTimeout(() => {
+                        statusDiv.style.display = 'none';
+                        statusText.style.color = '#007bff';
+                    }, 5000);
+                }
+            } catch (error) {
+                console.error('Error in background removal:', error);
+                statusText.textContent = 'Error occurred!';
+                statusText.style.color = '#dc3545';
+                alert('Error removing background: ' + error.message);
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                    statusText.style.color = '#007bff';
+                }, 3000);
+            } finally {
+                // Re-enable button
+                this.disabled = false;
+                this.textContent = 'Remove Background from Selected';
+            }
+        });
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initBackgroundRemoval);
+    } else {
+        // DOM is already loaded
+        initBackgroundRemoval();
+    }
+})(); // End of background removal IIFE
+
+// VAT rate suggestion functionality using Kimi2
+document.getElementById('suggest-vat-btn').addEventListener('click', async function() {
+    const productName = document.getElementById('name').value;
+    const productDescription = document.getElementById('description').value;
+    const technicalDetails = document.getElementById('technical_details').value;
+    const category = document.getElementById('category').value;
+
+    if (!productName.trim() && !technicalDetails.trim()) {
+        alert('Please enter at least a product name or technical details before requesting VAT suggestion.');
+        return;
+    }
+
+    // Show loading indicator
+    const loadingIndicator = document.getElementById('loading-indicator');
+    loadingIndicator.style.display = 'block';
+    this.disabled = true;
+    this.textContent = 'Suggesting...';
+
+    try {
+        // Get images if available for comprehensive analysis
+        const imageBase64 = getImagesAsBase64();
+
+        const response = await fetch('/api/suggest_vat_rate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                product_name: productName,
+                product_description: productDescription,
+                technical_details: technicalDetails,
+                category: category,
+                images: imageBase64
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.error) {
+            alert('Error suggesting VAT rate: ' + result.error);
+        } else {
+            if (result.vat_rate !== undefined) {
+                // Update the VAT rate dropdown with the suggested rate
+                const vatRateSelect = document.getElementById('vat_rate');
+                vatRateSelect.value = result.vat_rate;
+
+                // Show the suggestion details
+                const suggestionInfo = document.getElementById('vat-suggestion-info');
+                const suggestionSpan = document.getElementById('vat-suggestion');
+
+                // Find the label for the suggested rate
+                let suggestedRateLabel = 'Custom Rate';
+                const vatRateOptions = {
+                    '0.23': 'Standard rate (23%)',
+                    '0.08': 'Reduced rate (8%)',
+                    '0.05': 'Reduced rate (5%)',
+                    '0.00': 'Reduced rate (0%)',
+                    '0.04': 'Parking rate (4%)'
+                };
+
+                if (vatRateOptions[result.vat_rate]) {
+                    suggestedRateLabel = vatRateOptions[result.vat_rate];
+                }
+
+                suggestionSpan.innerHTML = `<strong>${result.vat_rate * 100}% (${suggestedRateLabel})</strong>`;
+
+                if (result.reasoning) {
+                    const reasoningDiv = document.getElementById('vat-reasoning');
+                    reasoningDiv.innerHTML = `<strong>Reasoning:</strong> ${result.reasoning}`;
+                }
+
+                suggestionInfo.style.display = 'block';
+            } else {
+                alert('Could not generate VAT rate suggestion. Please try again.');
+            }
+        }
+    } catch (error) {
+        alert('Error suggesting VAT rate: ' + error.message);
+    } finally {
+        // Hide loading indicator
+        loadingIndicator.style.display = 'none';
+        this.disabled = false;
+        this.textContent = 'Suggest VAT Rate';
+    }
+});
+
+// Handle form submission to add background removal flags for newly uploaded images
+(function() {
+    function initFormSubmissionHandler() {
+        const productForm = document.querySelector('.product-form');
+        if (!productForm) {
+            console.error('Product form not found');
+            return;
+        }
+
+        console.log('✓ Product form found, attaching submit handler...');
+
+        productForm.addEventListener('submit', async function(e) {
+            e.preventDefault(); // Prevent default form submission
+
+            const submitBtn = document.getElementById('product-submit-btn');
+            const spinner = document.getElementById('submit-spinner');
+
+            // Show spinner and disable button to prevent multiple submissions
+            spinner.style.display = 'inline-block';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Processing...';
+
+            // Create a new form data object based on the original form
+            const formData = new FormData();
+
+            // Add all existing form fields except the files
+            const originalInputs = this.querySelectorAll('input:not([type="file"]), textarea, select');
+            for (let input of originalInputs) {
+                if (input.name) {
+                    formData.append(input.name, input.value);
+                }
+            }
+
+            // Handle file uploads - check if any images have processed backgrounds
+            const inputElement = document.getElementById('photos');
+            const originalFiles = Array.from(inputElement.files);
+            const previewItems = document.querySelectorAll('.preview-item');
+
+            // Process each preview item to see if it has been background-removed
+            for (let i = 0; i < previewItems.length; i++) {
+                const imgElement = previewItems[i].querySelector('img');
+                if (imgElement) {
+                    // Check if this preview item is selected for background removal or was processed
+                    const isSelected = previewItems[i].classList.contains('selected-for-bg-removal');
+                    const isProcessed = imgElement.src.startsWith('data:'); // Check if image was processed
+
+                    if (isProcessed && originalFiles[i]) {
+                        // Extract the image data from the processed image src
+                        const dataURL = imgElement.src;
+
+                        // Convert data URL to blob
+                        const blob = dataURLToBlob(dataURL);
+
+                        // Create a new file from the blob
+                        const processedFile = new File([blob], `processed_${originalFiles[i].name}`, {
+                            type: blob.type,
+                            lastModified: Date.now()
+                        });
+
+                        // Add the processed file to form data
+                        formData.append('photos', processedFile);
+
+                        // Add the background removal flag
+                        formData.append(`remove_background_${i}`, 'true');
+                    } else if (originalFiles[i]) {
+                        // Use original file if not processed
+                        formData.append('photos', originalFiles[i]);
+                    }
+                }
+            }
+
+            // Add CSRF token if present
+            const csrfToken = document.querySelector('input[name="csrf_token"]');
+            if (csrfToken) {
+                formData.append('csrf_token', csrfToken.value);
+            }
+
+            try {
+                // Determine the URL based on whether we're creating or editing
+                const action = this.getAttribute('action');
+
+                // Send the form data via fetch API
+                const response = await fetch(action, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                // Check if the response is OK (status 200-299)
+                if (response.ok) {
+                    // If successful (200), redirect to products page
+                    window.location.href = '/products';
+                } else if (response.status === 302 || response.status === 303) {
+                    // If redirected (302 or 303), get the redirect URL from the headers
+                    const redirectUrl = response.headers.get('Location') || '/products';
+                    window.location.href = redirectUrl;
+                } else {
+                    // Handle error response
+                    const errorText = await response.text();
+                    alert('Error: ' + errorText);
+
+                    // Re-enable button and hide spinner
+                    spinner.style.display = 'none';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '{% if product %}Update{% else %}Create{% endif %} Product';
+                }
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                alert('An error occurred while submitting the form. Please try again.');
+
+                // Re-enable button and hide spinner
+                spinner.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.textContent = '{% if product %}Update{% else %}Create{% endif %} Product';
+            }
+        });
+    }
+
+    // Helper function to convert data URL to blob
+    function dataURLToBlob(dataURL) {
+        const parts = dataURL.split(';base64,');
+        const contentType = parts[0].split(':')[1];
+        const raw = window.atob(parts[1]);
+        const uInt8Array = new Uint8Array(raw.length);
+
+        for (let i = 0; i < raw.length; ++i) {
+            uInt8Array[i] = raw.charCodeAt(i);
+        }
+
+        return new Blob([uInt8Array], { type: contentType });
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initFormSubmissionHandler);
+    } else {
+        // DOM is already loaded
+        initFormSubmissionHandler();
+    }
+})(); // End of form submission IIFE
+</script>
+{% endblock %}
