@@ -1,0 +1,45 @@
+{
+  "market_overview": {
+    "demand": "High",
+    "average_price": "120-180 zł",
+    "trend": "Growing",
+    "marketplaces": ["Allegro", "Zalando", "OLX", "Etsy"]
+  },
+  "competition": {
+    "level": "Medium",
+    "popular_brands": ["Local Heroes", "Reserved", "2005"]
+  },
+  "target_audience": {
+    "age": "18-35",
+    "gender": "Mostly male",
+    "interests": ["Streetwear", "comfort", "unique design"]
+  },
+  "marketplaces": [
+    {
+      "name": "Allegro",
+      "description": "easiest to start, high traffic",
+      "icon": "flag.fill"
+    },
+    {
+      "name": "Zalando",
+      "description": "fashion-oriented, higher brand standards",
+      "icon": "flag.fill"
+    },
+    {
+      "name": "Etsy",
+      "description": "good for custom or handmade hoodies",
+      "icon": "globe"
+    },
+    {
+      "name": "OLX",
+      "description": "suitable for local or small-batch sales",
+      "icon": "iphone"
+    }
+  ],
+  "tips": [
+    "Start with **Allegro** – lower entry barrier",
+    "Use **street-style photos** for better engagement",
+    "Set **price around 150-160 zł** for best conversion"
+  ]
+}
+

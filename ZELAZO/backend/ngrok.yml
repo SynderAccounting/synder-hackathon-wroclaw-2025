@@ -1,0 +1,30 @@
+# ngrok configuration
+# Get your authtoken from: https://dashboard.ngrok.com/get-started/your-authtoken
+# Add it to your .env file as: NGROK_AUTHTOKEN=your_token_here
+
+version: "2"
+authtoken_from_env: NGROK_AUTHTOKEN
+
+tunnels:
+  backend:
+    proto: http
+    addr: 8000
+    # Uncomment and set a custom domain if you have ngrok paid plan
+    # domain: your-custom-domain.ngrok.io
+
+    # Request and response logging
+    inspect: true
+
+    # Enable compression
+    # compression: true
+
+    # Custom subdomain (requires paid plan)
+    # subdomain: my-backend
+
+    # Basic authentication (optional)
+    # auth: "user:password"
+
+    # IP restrictions (optional)
+    # ip_restriction:
+    #   allow_cidrs:
+    #     - 0.0.0.0/0

@@ -1,0 +1,60 @@
+# Podman and Docker compatible compose file
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: product_distribution_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-product_distribution}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d ${POSTGRES_DB:-product_distribution}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Podman compatibility: run with user namespace
+    userns_mode: "keep-id"
+
+  # Backend API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: product_distribution_api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-product_distribution}
+      HOST: 0.0.0.0
+      PORT: 8000
+      DEBUG: "${DEBUG:-True}"
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./app:/app/app:Z
+      - ./alembic/versions:/app/alembic/versions:Z
+      - ./.env:/app/.env:Z
+    depends_on:
+      db:
+        condition: service_healthy
+    # Command is now handled by docker-entrypoint.sh which runs migrations first
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    # Podman compatibility: run with user namespace
+    userns_mode: "keep-id"
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  default:
+    name: product_distribution_network
