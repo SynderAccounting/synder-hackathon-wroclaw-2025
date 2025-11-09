@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* Fallback marquee animation (left-to-right) */
+@keyframes marquee-ltr {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+.marquee-ltr {
+  animation: marquee-ltr 30s linear infinite;
+  will-change: transform;
+}
