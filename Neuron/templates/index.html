@@ -1,0 +1,718 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - One Front for Sellers{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h2>Dashboard</h2>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3><i class="fas fa-users"></i> Total Customers</h3>
+            <p class="stat-number">{{ stats.total_customers }}</p>
+            <p class="stat-detail">{{ stats.active_customers }} active</p>
+        </div>
+
+        <div class="stat-card">
+            <h3><i class="fas fa-boxes"></i> Total Products</h3>
+            <p class="stat-number">{{ stats.total_products }}</p>
+        </div>
+
+        <div class="stat-card">
+            <h3><i class="fas fa-shopping-cart"></i> Total Orders</h3>
+            <p class="stat-number">{{ stats.total_orders }}</p>
+            <p class="stat-detail">{{ stats.pending_orders }} pending</p>
+        </div>
+
+        <div class="stat-card">
+            <h3><i class="fas fa-dollar-sign"></i> Total Revenue</h3>
+            <p class="stat-number">${{ "%.2f"|format(stats.total_revenue) }}</p>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tabs">
+        <div class="tab-nav">
+            <button class="tab-button active" data-tab="overview"><i class="fas fa-chart-line"></i> Overview</button>
+            <button class="tab-button" data-tab="market"><i class="fas fa-chart-pie"></i> Market Analysis</button>
+            <button class="tab-button" data-tab="sales"><i class="fas fa-bullseye"></i> Sales Prediction</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content-wrapper">
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-content active">
+                <div class="dashboard-sections">
+                    <div class="section">
+                        <h3><i class="fas fa-list"></i> Recent Orders</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in recent_orders %}
+                                <tr>
+                                    <td><a href="{{ url_for('order_detail', order_id=order.id) }}">#{{ order.id }}</a></td>
+                                    <td>{{ order.customer_name }}</td>
+                                    <td>{{ order.order_date }}</td>
+                                    <td>${{ "%.2f"|format(order.total_amount) }}</td>
+                                    <td><span class="badge badge-{{ order.status }}">{{ order.status }}</span></td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5">No orders yet</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Low Stock Alert</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Product</th>
+                                    <th>Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in low_stock %}
+                                <tr>
+                                    <td>#{{ product.id }}</td>
+                                    <td>{{ product.name }}</td>
+                                    <td class="text-danger">{{ product.stock_quantity }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3">All products have sufficient stock</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Market Analysis Tab -->
+            <div id="market" class="tab-content">
+                <div class="market-analysis-dashboard">
+                    <h3 id="market-analysis-title">Product Price Predictions</h3>
+                    <p id="market-analysis-subtitle" style="color: #7f8c8d; margin-bottom: 1.5rem;">Analyze price trends and forecast future prices for your products</p>
+
+                    <div class="dashboard-content">
+                        <div class="product-selection-panel" id="product-selection-panel" style="flex: 1; min-width: 300px; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); padding: 20px;">
+                            <div id="product-selection-container">
+                                <div class="search-container">
+                                    <div style="position: relative; width: 100%;">
+                                        <input
+                                            type="text"
+                                            id="product-search"
+                                            placeholder="Search products..."
+                                            class="search-input"
+                                            oninput="filterProducts()"
+                                            style="width: 100%; padding: 10px 10px 10px 35px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; margin-bottom: 15px;"
+                                        />
+                                        <i class="fas fa-search" style="position: absolute; left: 10px; top: 35%; transform: translateY(-50%); color: #7f8c8d;"></i>
+                                    </div>
+                                </div>
+
+                                <div id="product-list" class="product-list" style="max-height: 400px; overflow-y: auto;">
+                                    <!-- Products will be loaded dynamically -->
+                                    <div class="loading" style="text-align: center; padding: 20px; color: #7f8c8d;">Loading products...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="prediction-panel" id="prediction-panel" style="flex: 2; min-width: 600px; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); padding: 20px; display: none;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                <button onclick="showProductSelection()" style="padding: 8px 16px; background-color: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    ← Back to Products
+                                </button>
+                            </div>
+
+                            <div id="prediction-container">
+                                <div id="prediction-graph" class="prediction-graph">
+                                    <div class="graph-container">
+                                        <div id="prediction-message" style="text-align: center; padding: 20px; color: #7f8c8d;">
+                                            <div class="loading-spinner" style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; margin: 0 auto 20px;"></div>
+                                            <p>Loading price predictions...</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="prediction-error" class="error-message" style="display: none; color: #e74c3c; background-color: #fdeded; border: 1px solid #fadbd8; padding: 10px; border-radius: 4px; margin-top: 10px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales Prediction Tab -->
+            <div id="sales" class="tab-content">
+                <div class="dashboard-sections">
+                    <!-- AI Predictions Control Panel -->
+                    <div class="section">
+                        <h3><i class="fas fa-robot"></i> AI-Powered Sales & Customer Predictions</h3>
+                        <p style="color: #7f8c8d; margin-bottom: 1rem;">Using XGBoost ML models trained on historical Rossmann store data</p>
+
+                        <div class="prediction-controls" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; gap: 1rem; align-items: center;">
+                                <div style="width: 200px; margin-right: 50px;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #2c3e50;">Forecast Horizon</label>
+                                    <select id="horizonType" style="padding: 0.75rem 1.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+                                        <option value="all">All (Day, Week, Month)</option>
+                                        <option value="day">Next Day Only</option>
+                                        <option value="week">Next Week Only</option>
+                                        <option value="month">Next Month Only</option>
+                                    </select>
+                                </div>
+                                <div style="display: flex; align-items: flex-end;">
+                                    <button onclick="generatePredictions()"
+                                        style="padding: 0.75rem 2rem; background: #3498db; color: white; border: none; border-radius: 4px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.3s; margin-top: 34px;"
+                                        onmouseover="this.style.background='#2980b9'"
+                                        onmouseout="this.style.background='#3498db'">
+                                        Refresh
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Loading Indicator -->
+                        <div id="loadingIndicator" style="display: none; text-align: center; padding: 2rem;">
+                            <div style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                            <p style="margin-top: 1rem; color: #7f8c8d;">Generating predictions...</p>
+                        </div>
+
+                        <!-- Predictions Grid -->
+                        <div id="predictionsGrid" class="stats-grid" style="margin-top: 1.5rem;"></div>
+                    </div>
+
+                    <div class="section" id="kpiSection">
+                        <h3><i class="fas fa-chart-bar"></i> Model Accuracy Metrics</h3>
+                        <div class="kpi-grid">
+                            <div class="kpi-card">
+                                <div class="kpi-icon"><i class="fas fa-database"></i></div>
+                                <div class="kpi-label">Models Loaded</div>
+                                <div class="kpi-value">6</div>
+                            </div>
+                            <div class="kpi-card">
+                                <div class="kpi-icon"><i class="fas fa-bullseye"></i></div>
+                                <div class="kpi-label">Best R² Score</div>
+                                <div class="kpi-value">0.967</div>
+                            </div>
+                            <div class="kpi-card">
+                                <div class="kpi-icon"><i class="fas fa-brain"></i></div>
+                                <div class="kpi-label">Algorithm</div>
+                                <div class="kpi-value">XGBoost</div>
+                            </div>
+                            <div class="kpi-card">
+                                <div class="kpi-icon"><i class="fas fa-chart-line"></i></div>
+                                <div class="kpi-label">Training Data</div>
+                                <div class="kpi-value">1M+ records</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+<style>
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.prediction-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-left: 4px solid #3498db;
+}
+
+.prediction-card.sales {
+    border-left-color: #27ae60;
+}
+
+.prediction-card.customers {
+    border-left-color: #e74c3c;
+}
+
+.prediction-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.prediction-icon {
+    font-size: 1.5rem;
+    margin-right: 0.75rem;
+}
+
+.prediction-title h4 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+.prediction-title p {
+    margin: 0;
+    color: #95a5a6;
+    font-size: 0.85rem;
+}
+
+.prediction-value {
+    text-align: center;
+    margin: 1rem 0;
+}
+
+.main-prediction {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #3498db;
+    margin: 0.5rem 0;
+}
+
+.prediction-label {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.confidence-info {
+    background: #ecf0f1;
+    padding: 0.75rem;
+    border-radius: 4px;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.confidence-info strong {
+    color: #2c3e50;
+}
+
+.metrics-small {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-top: 1rem;
+    font-size: 0.85rem;
+}
+
+.metric-small {
+    background: #f8f9fa;
+    padding: 0.5rem;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.metric-small-label {
+    color: #7f8c8d;
+    font-weight: 600;
+}
+
+.metric-small-value {
+    color: #2c3e50;
+    font-weight: 700;
+    font-size: 1rem;
+}
+</style>
+
+<script>
+async function generatePredictions() {
+    const storeId = 67; // Fixed to store 67
+    const horizonType = document.getElementById('horizonType').value;
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const predictionsGrid = document.getElementById('predictionsGrid');
+
+    loadingIndicator.style.display = 'block';
+    predictionsGrid.innerHTML = '';
+
+    try {
+        const response = await fetch('/api/batch_predict', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ store_id: storeId })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error);
+        }
+
+        displayPredictions(data.predictions, horizonType);
+    } catch (error) {
+        predictionsGrid.innerHTML = `<div style="grid-column: 1/-1; padding: 1rem; background: #fee; border: 1px solid #fcc; border-radius: 4px; color: #c33;">
+            <strong>Error:</strong> ${error.message}
+        </div>`;
+    } finally {
+        loadingIndicator.style.display = 'none';
+    }
+}
+
+function displayPredictions(predictions, horizonType) {
+    const predictionsGrid = document.getElementById('predictionsGrid');
+    predictionsGrid.innerHTML = '';
+
+    const horizons = horizonType === 'all' ? ['day', 'week', 'month'] : [horizonType];
+    const targets = [
+        { key: 'sales', label: 'Sales', icon: '<i class="fas fa-dollar-sign"></i>', type: 'sales' },
+        { key: 'customers', label: 'Customers / Products', icon: '<i class="fas fa-users"></i>', type: 'customers' }
+    ];
+
+    targets.forEach(target => {
+        horizons.forEach(horizon => {
+            if (predictions[target.key] && predictions[target.key][horizon]) {
+                const data = predictions[target.key][horizon];
+                const card = createPredictionCard(target, horizon, data);
+                predictionsGrid.insertAdjacentHTML('beforeend', card);
+            }
+        });
+    });
+}
+
+function createPredictionCard(target, horizon, data) {
+    const horizonLabel = horizon.charAt(0).toUpperCase() + horizon.slice(1);
+    const unit = target.key === 'sales' ? '$' : '';
+    const formatNumber = (num) => Math.round(num).toLocaleString('en-US');
+
+    return `
+        <div class="prediction-card ${target.type}">
+            <div class="prediction-header">
+                <div class="prediction-icon">${target.icon}</div>
+                <div class="prediction-title">
+                    <h4>${target.label}</h4>
+                    <p>${horizonLabel} Forecast</p>
+                </div>
+            </div>
+            <div class="prediction-value">
+                <div class="prediction-label">Predicted ${target.label}</div>
+                <div class="main-prediction">${unit}${formatNumber(data.value)}</div>
+            </div>
+            <div class="confidence-info">
+                <strong>95% Confidence:</strong><br>
+                ${unit}${formatNumber(data.confidence_lower)} - ${unit}${formatNumber(data.confidence_upper)}
+            </div>
+        </div>
+    `;
+}
+
+// Auto-generate predictions on page load
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        generatePredictions();
+    }, 500);
+});
+
+// Market Analysis Dashboard JavaScript
+let selectedProduct = null;
+let allProducts = [];
+
+// Load products from the database for market analysis
+async function loadProducts() {
+    try {
+        const response = await fetch('/api/products');
+        const products = await response.json();
+
+        allProducts = products.map(product => ({
+            id: product.id.toString(),
+            name: product.name,
+            category: product.category || 'Uncategorized',
+            currentPrice: parseFloat(product.price) || 0
+        }));
+
+        renderProductList();
+    } catch (error) {
+        console.error('Error loading products:', error);
+        document.getElementById('product-list').innerHTML =
+            `<div class="error" style="text-align: center; padding: 20px; color: #e74c3c; background-color: #fdeded; border: 1px solid #fadbd8; border-radius: 4px;">Error: Failed to load products</div>`;
+    }
+}
+
+function renderProductList() {
+    const productList = document.getElementById('product-list');
+    const searchTerm = document.getElementById('product-search').value.toLowerCase();
+
+    const filteredProducts = allProducts.filter(product =>
+        product.name.toLowerCase().includes(searchTerm) ||
+        product.category.toLowerCase().includes(searchTerm)
+    );
+
+    if (filteredProducts.length === 0) {
+        productList.innerHTML =
+            '<div class="empty" style="text-align: center; padding: 20px; color: #7f8c8d;">No products found</div>';
+        return;
+    }
+
+    const productItems = filteredProducts.map(product => `
+        <div
+            class="product-item" style="padding: 12px; border: 1px solid #eee; border-radius: 4px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s ease; ${selectedProduct === product.id ? 'background-color: #e3f2fd; border-color: #2196f3;' : ''}"
+            onclick="handleProductSelect('${product.id}')"
+        >
+            <div class="product-info">
+                <h4 style="margin: 0 0 5px 0; color: #2c3e50;">${product.name}</h4>
+                <p style="margin: 3px 0; font-size: 14px; color: #666;">Category: ${product.category}</p>
+                <p style="margin: 3px 0; font-size: 14px; color: #666;">Current Price: $${product.currentPrice.toFixed(2)}</p>
+            </div>
+        </div>
+    `).join('');
+
+    productList.innerHTML = productItems;
+}
+
+function filterProducts() {
+    renderProductList();
+}
+
+async function handleProductSelect(productId) {
+    selectedProduct = productId;
+    document.getElementById('prediction-error').style.display = 'none';
+
+    // Show the prediction panel and hide the product selection
+    document.getElementById('product-selection-panel').style.display = 'none';
+    document.getElementById('prediction-panel').style.display = 'block';
+
+    // Update title and subtitle
+    document.getElementById('market-analysis-title').textContent = 'Price Prediction';
+    document.getElementById('market-analysis-subtitle').style.display = 'none';
+
+    // Show loading state
+    const predictionMessage = document.getElementById('prediction-message');
+    predictionMessage.innerHTML = `
+        <div class="loading-spinner" style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; margin: 0 auto 20px;"></div>
+        <p>Loading price predictions...</p>
+    `;
+    predictionMessage.style.display = 'block';
+
+    try {
+        // Get predictions for the selected product
+        const response = await fetch('/api/product_price_prediction', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                product_id: productId
+            })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to get predictions');
+        }
+
+        renderPredictionGraph(data.predictions, data.product_name);
+    } catch (error) {
+        console.error('Error predicting prices:', error);
+        document.getElementById('prediction-error').innerHTML =
+            `Failed to predict prices: ${error.message}`;
+        document.getElementById('prediction-error').style.display = 'block';
+
+        // Show error instead of graph
+        document.getElementById('prediction-message').innerHTML =
+            '<div style="text-align: center; padding: 20px; color: #e74c3c;">Error loading predictions</div>';
+    }
+
+    // Update product list to show selection
+    renderProductList();
+}
+
+function renderPredictionGraph(predictions, productName) {
+    if (!predictions || predictions.length === 0) {
+        document.getElementById('prediction-message').innerHTML =
+            '<div style="text-align: center; padding: 20px; color: #7f8c8d;">No predictions available for this product</div>';
+        return;
+    }
+
+    // Find min and max values for scaling the graph
+    const allPrices = predictions.flatMap(p => [
+        p.predictedPrice,
+        p.confidenceLow || p.predictedPrice,
+        p.confidenceHigh || p.predictedPrice
+    ]);
+    const minPrice = Math.min(...allPrices);
+    const maxPrice = Math.max(...allPrices);
+    const priceRange = maxPrice - minPrice || 1; // Avoid division by zero
+
+    // Graph dimensions
+    const graphHeight = 300;
+    const graphWidth = 600;
+    const padding = 40;
+    const chartWidth = graphWidth - (padding * 2);
+    const chartHeight = graphHeight - (padding * 2);
+
+    // Calculate points for the prediction line
+    const points = predictions.map((prediction, index) => {
+        const x = padding + (index * chartWidth) / (predictions.length - 1);
+        const y = graphHeight - padding - ((prediction.predictedPrice - minPrice) / priceRange) * chartHeight;
+        return `${x},${y}`;
+    }).join(' ');
+
+    // Calculate points for the confidence area
+    const confidenceAreaPoints = predictions.map((prediction, index) => {
+        const x = padding + (index * chartWidth) / (predictions.length - 1);
+        const y = graphHeight - padding - ((prediction.confidenceLow - minPrice) / priceRange) * chartHeight;
+        return `${x},${y}`;
+    }).reverse().concat(
+        predictions.map((prediction, index) => {
+            const x = padding + (index * chartWidth) / (predictions.length - 1);
+            const y = graphHeight - padding - ((prediction.confidenceHigh - minPrice) / priceRange) * chartHeight;
+            return `${x},${y}`;
+        })
+    ).join(' ');
+
+    let svgContent = `
+        <svg
+            width="${graphWidth}"
+            height="${graphHeight}"
+            viewBox="0 0 ${graphWidth} ${graphHeight}"
+        >
+            <!-- Background grid -->
+            <g stroke="#e0e0e0" stroke-width="1">
+                ${[0, 1, 2, 3, 4].map(i =>
+                    `<line
+                        x1="${padding}"
+                        y1="${padding + (i * chartHeight/4)}"
+                        x2="${graphWidth - padding}"
+                        y2="${padding + (i * chartHeight/4)}"
+                    />`
+                ).join('')}
+                ${predictions.map((_, i) =>
+                    `<line
+                        x1="${padding + (i * chartWidth/(predictions.length-1 || 1))}"
+                        y1="${padding}"
+                        x2="${padding + (i * chartWidth/(predictions.length-1 || 1))}"
+                        y2="${graphHeight - padding}"
+                    />`
+                ).join('')}
+            </g>
+
+            <!-- Confidence area -->
+            <polygon
+                points="${confidenceAreaPoints}"
+                fill="#e3f2fd"
+                opacity="0.5"
+            />
+
+            <!-- Prediction line -->
+            <polyline
+                fill="none"
+                stroke="#1976d2"
+                stroke-width="2"
+                points="${points}"
+            />
+
+            <!-- Data points -->
+            ${predictions.map((prediction, index) => {
+                const x = padding + (index * chartWidth) / (predictions.length - 1 || 1);
+                const y = graphHeight - padding - ((prediction.predictedPrice - minPrice) / priceRange) * chartHeight;
+                return `<circle
+                    cx="${x}"
+                    cy="${y}"
+                    r="4"
+                    fill="#1976d2"
+                />`;
+            }).join('')}
+
+            <!-- X-axis labels -->
+            ${predictions.map((prediction, index) => {
+                const x = padding + (index * chartWidth) / (predictions.length - 1 || 1);
+                const y = graphHeight - 10;
+                return `<text
+                    x="${x}"
+                    y="${y}"
+                    text-anchor="middle"
+                    font-size="12"
+                    fill="#666"
+                >
+                    ${prediction.month}
+                </text>`;
+            }).join('')}
+
+            <!-- Y-axis labels -->
+            ${[0, 1, 2, 3, 4].map(i => {
+                const value = minPrice + (i * priceRange / 4);
+                const y = graphHeight - padding - (i * chartHeight / 4);
+                return `<text
+                    x="${padding - 10}"
+                    y="${y + 4}"
+                    text-anchor="end"
+                    font-size="12"
+                    fill="#666"
+                >
+                    $${value.toFixed(2)}
+                </text>`;
+            }).join('')}
+        </svg>
+    `;
+
+    const graphContainer = document.getElementById('prediction-message');
+    graphContainer.innerHTML = svgContent + `
+        <div class="legend" style="display: flex; gap: 20px; justify-content: center; margin-top: 15px;">
+            <div class="legend-item" style="display: flex; align-items: center; gap: 5px;">
+                <div class="legend-color" style="width: 15px; height: 15px; border-radius: 3px; background-color: #1976d2;"></div>
+                <span>Predicted Price</span>
+            </div>
+            <div class="legend-item" style="display: flex; align-items: center; gap: 5px;">
+                <div class="legend-color" style="width: 15px; height: 15px; border-radius: 3px; background-color: #e3f2fd;"></div>
+                <span>Confidence Interval</span>
+            </div>
+        </div>
+    `;
+
+    // Update the title to show the selected product name
+    document.getElementById('market-analysis-title').textContent = `Price Prediction for ${productName}`;
+}
+
+// Function to go back to product selection
+function showProductSelection() {
+    document.getElementById('product-selection-panel').style.display = 'block';
+    document.getElementById('prediction-panel').style.display = 'none';
+    document.getElementById('market-analysis-title').textContent = 'Product Price Predictions';
+    document.getElementById('market-analysis-subtitle').style.display = 'block';
+}
+
+// Initialize the market analysis dashboard when the market tab is selected
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize market analysis when the page loads, but only if market tab is active
+    const marketTabButton = document.querySelector('[data-tab="market"]');
+    const marketTabContent = document.getElementById('market');
+
+    if (marketTabButton && marketTabContent.classList.contains('active')) {
+        loadProducts();
+    }
+
+    // Add event listener to market tab to load products when clicked
+    marketTabButton.addEventListener('click', function() {
+        // Small delay to ensure the tab is fully activated
+        setTimeout(() => {
+            if (marketTabContent.classList.contains('active')) {
+                loadProducts();
+            }
+        }, 100);
+    });
+});
+
+// Add keyboard support for search
+document.getElementById('product-search')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        filterProducts();
+    }
+});
+</script>
+        </div>
+    </div>
+</div>
+{% endblock %}

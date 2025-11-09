@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Product Analysis: {{ product.name }} - One Front{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Product Analysis: {{ product.name }}</h2>
+    <a href="{{ url_for('products') }}" class="btn btn-secondary">Back to Products</a>
+</div>
+
+<div class="analysis-container">
+    <!-- Product Info Section -->
+    <div class="section product-info-section">
+        <div class="product-info-grid">
+            <div class="product-info-image">
+                {% if product_photos %}
+                <img src="{{ url_for('static', filename='uploads/products/' + product_photos[0].photo_path) }}" alt="{{ product.name }}">
+                {% elif product.photo %}
+                <img src="{{ url_for('static', filename='uploads/products/' + product.photo) }}" alt="{{ product.name }}">
+                {% else %}
+                <div class="product-no-image-large">
+                    <span>No Image</span>
+                </div>
+                {% endif %}
+            </div>
+            <div class="product-info-details">
+                <h3>{{ product.name }}</h3>
+                <div class="product-meta">
+                    {% if product.category %}
+                    <span class="badge badge-active">{{ product.category }}</span>
+                    {% endif %}
+                    <span class="product-sku">ID: #{{ product.id }}</span>
+                </div>
+                <p class="product-desc">{{ product.description or 'No description available' }}</p>
+                <div class="product-stats-mini">
+                    <div class="stat-mini">
+                        <strong>Price:</strong> ${{ "%.2f"|format(product.price) }}
+                    </div>
+                    <div class="stat-mini">
+                        <strong>Stock:</strong> <span {% if product.stock_quantity < 10 %}class="text-danger"{% endif %}>{{ product.stock_quantity }} units</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Photos Gallery -->
+    {% if product_photos and product_photos|length > 1 %}
+    <div class="section">
+        <h3><i class="fas fa-images"></i> Product Photos ({{ product_photos|length }})</h3>
+        <div class="analysis-photo-gallery">
+            {% for photo in product_photos %}
+            <div class="analysis-photo-item {% if photo.is_main %}is-main{% endif %}">
+                <img src="{{ url_for('static', filename='uploads/products/' + photo.photo_path) }}" alt="{{ product.name }}">
+                {% if photo.is_main %}
+                <span class="photo-badge main">Main</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Sales Performance -->
+    <div class="section">
+        <h3><i class="fas fa-chart-bar"></i> Sales Performance</h3>
+        <div class="analytics-grid">
+            <div class="analytics-card">
+                <h4>Total Orders</h4>
+                <p class="analytics-value">{{ sales_data.total_orders or 0 }}</p>
+                <p class="analytics-label">orders placed</p>
+            </div>
+            <div class="analytics-card">
+                <h4>Units Sold</h4>
+                <p class="analytics-value">{{ sales_data.total_quantity_sold or 0 }}</p>
+                <p class="analytics-label">total quantity</p>
+            </div>
+            <div class="analytics-card">
+                <h4>Total Revenue</h4>
+                <p class="analytics-value">${{ "%.2f"|format(sales_data.total_revenue or 0) }}</p>
+                <p class="analytics-label">from this product</p>
+            </div>
+            <div class="analytics-card">
+                <h4>Avg. per Order</h4>
+                <p class="analytics-value">{{ "%.1f"|format(sales_data.avg_quantity_per_order or 0) }}</p>
+                <p class="analytics-label">units per order</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Market Insights -->
+    <div class="section">
+        <h3><i class="fas fa-lightbulb"></i> Market Insights</h3>
+        <div class="insights-grid">
+            <div class="insight-card">
+                <div class="insight-icon"><i class="fas fa-chart-line"></i></div>
+                <h4>Performance Rating</h4>
+                <p class="insight-value">
+                    {% if sales_data.total_orders %}
+                        {% if sales_data.total_orders > 10 %}Excellent{% elif sales_data.total_orders > 5 %}Good{% else %}Average{% endif %}
+                    {% else %}
+                    No Sales Yet
+                    {% endif %}
+                </p>
+            </div>
+            <div class="insight-card">
+                <div class="insight-icon"><i class="fas fa-coins"></i></div>
+                <h4>Revenue Potential</h4>
+                <p class="insight-value">${{ "%.2f"|format((sales_data.total_revenue or 0) * 1.25) }}</p>
+                <p class="insight-label">25% growth projection</p>
+            </div>
+            <div class="insight-card">
+                <div class="insight-icon"><i class="fas fa-warehouse"></i></div>
+                <h4>Stock Status</h4>
+                <p class="insight-value">
+                    {% if product.stock_quantity < 10 %}
+                    <span class="text-danger">Critical</span>
+                    {% elif product.stock_quantity < 50 %}
+                    <span style="color: #f39c12;">Low</span>
+                    {% else %}
+                    <span style="color: #27ae60;">Healthy</span>
+                    {% endif %}
+                </p>
+                <p class="insight-label">{{ product.stock_quantity }} units remaining</p>
+            </div>
+            <div class="insight-card">
+                <div class="insight-icon"><i class="fas fa-shopping-cart"></i></div>
+                <h4>Reorder Recommendation</h4>
+                <p class="insight-value">
+                    {% if product.stock_quantity < 20 %}
+                    Yes
+                    {% else %}
+                    Not Yet
+                    {% endif %}
+                </p>
+                <p class="insight-label">based on current stock</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="section">
+        <h3><i class="fas fa-list"></i> Recent Orders</h3>
+        {% if recent_orders %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th>Quantity</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in recent_orders %}
+                <tr>
+                    <td><a href="{{ url_for('order_detail', order_id=order.id) }}">#{{ order.id }}</a></td>
+                    <td>{{ order.customer_name }}</td>
+                    <td>{{ order.order_date[:10] }}</td>
+                    <td>{{ order.quantity }}</td>
+                    <td>${{ "%.2f"|format(order.subtotal) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state-small">
+            <p>No orders for this product yet.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Similar Products -->
+    {% if similar_products %}
+    <div class="section">
+        <h3><i class="fas fa-sitemap"></i> Similar Products ({{ product.category }})</h3>
+        <div class="similar-products-grid">
+            {% for similar in similar_products %}
+            <div class="similar-product-card">
+                <div class="similar-product-image">
+                    {% if similar.photo %}
+                    <img src="{{ url_for('static', filename='uploads/products/' + similar.photo) }}" alt="{{ similar.name }}">
+                    {% else %}
+                    <div class="similar-no-image">No Image</div>
+                    {% endif %}
+                </div>
+                <div class="similar-product-info">
+                    <h4>{{ similar.name }}</h4>
+                    <p class="similar-price">${{ "%.2f"|format(similar.price) }}</p>
+                    <a href="{{ url_for('product_analysis', product_id=similar.id) }}" class="btn btn-small btn-secondary">View Analysis</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

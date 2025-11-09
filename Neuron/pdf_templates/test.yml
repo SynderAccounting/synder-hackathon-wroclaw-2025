@@ -1,0 +1,8 @@
+---
+issuer: Custom Invoice
+keywords: [Faktura, Invoice]  # For Polish/English detection
+fields:
+  amount: Total[:\s]*€?([\d.,]+)
+  date: Date[:\s]*(\d{1,2}/\d{1,2}/\d{4})
+  invoice_number: INV[:\s]*(\d+)
+

@@ -1,0 +1,601 @@
+{% extends "base.html" %}
+
+{% block title %}AI Predictions - Sales & Customer Forecasting{% endblock %}
+
+{% block content %}
+<style>
+    .predictions-dashboard {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .predictions-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding: 30px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .predictions-header h2 {
+        margin: 0 0 10px 0;
+        font-size: 2.5em;
+        font-weight: 700;
+    }
+
+    .predictions-header p {
+        margin: 0;
+        font-size: 1.1em;
+        opacity: 0.95;
+    }
+
+    .ai-badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.2);
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.9em;
+        margin-top: 10px;
+        font-weight: 500;
+    }
+
+    .control-panel {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+
+    .control-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .control-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .control-group label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #333;
+        font-size: 0.95em;
+    }
+
+    .control-group input,
+    .control-group select {
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1em;
+        transition: all 0.3s;
+    }
+
+    .control-group input:focus,
+    .control-group select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .predict-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 15px 40px;
+        border-radius: 8px;
+        font-size: 1.1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .predict-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .predict-button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .results-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 25px;
+        margin-top: 30px;
+    }
+
+    .prediction-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s;
+        border-left: 5px solid;
+    }
+
+    .prediction-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .prediction-card.sales {
+        border-color: #4CAF50;
+    }
+
+    .prediction-card.customers {
+        border-color: #2196F3;
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .card-icon {
+        font-size: 2.5em;
+        margin-right: 15px;
+    }
+
+    .card-title {
+        flex: 1;
+    }
+
+    .card-title h3 {
+        margin: 0 0 5px 0;
+        font-size: 1.3em;
+        color: #333;
+    }
+
+    .card-title p {
+        margin: 0;
+        font-size: 0.9em;
+        color: #666;
+    }
+
+    .prediction-value {
+        text-align: center;
+        margin: 20px 0;
+    }
+
+    .main-value {
+        font-size: 3em;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 10px 0;
+    }
+
+    .value-label {
+        font-size: 0.9em;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+    }
+
+    .confidence-range {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+    }
+
+    .confidence-range h4 {
+        margin: 0 0 10px 0;
+        font-size: 0.95em;
+        color: #666;
+        text-transform: uppercase;
+    }
+
+    .range-values {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 1.1em;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .range-bar {
+        height: 8px;
+        background: linear-gradient(to right, #ff6b6b, #4ecdc4, #45b7d1);
+        border-radius: 4px;
+        margin: 10px 0;
+        position: relative;
+    }
+
+    .range-marker {
+        position: absolute;
+        top: -4px;
+        width: 16px;
+        height: 16px;
+        background: #667eea;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .metric-item {
+        background: #f8f9fa;
+        padding: 12px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .metric-label {
+        font-size: 0.85em;
+        color: #666;
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
+
+    .metric-value {
+        font-size: 1.3em;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #667eea;
+    }
+
+    .loading-spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .error-message {
+        background: #fee;
+        border: 2px solid #fcc;
+        color: #c33;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+        text-align: center;
+    }
+
+    .info-panel {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+    }
+
+    .info-panel h3 {
+        margin: 0 0 10px 0;
+    }
+
+    .info-list {
+        list-style: none;
+        padding: 0;
+        margin: 10px 0 0 0;
+    }
+
+    .info-list li {
+        padding: 8px 0;
+        padding-left: 25px;
+        position: relative;
+    }
+
+    .info-list li:before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        font-weight: bold;
+        font-size: 1.2em;
+    }
+
+    .model-info {
+        background: #e8f4f8;
+        border-left: 4px solid #2196F3;
+        padding: 15px;
+        border-radius: 5px;
+        margin-top: 15px;
+        font-size: 0.9em;
+    }
+
+    .model-info strong {
+        color: #1976D2;
+    }
+
+    @media (max-width: 768px) {
+        .results-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .predictions-header h2 {
+            font-size: 1.8em;
+        }
+
+        .main-value {
+            font-size: 2em;
+        }
+    }
+</style>
+
+<div class="predictions-dashboard">
+    <div class="predictions-header">
+        <h2>AI-Powered Sales & Customer Predictions</h2>
+        <p>Advanced Machine Learning Models for Accurate Business Forecasting</p>
+        <div class="ai-badge">Powered by XGBoost & Gradient Boosting</div>
+    </div>
+
+    <div class="control-panel">
+        <h3 style="margin-top: 0; color: #333;">Prediction Settings</h3>
+
+        <div class="control-row">
+            <div class="control-group">
+                <label for="storeId">Store ID</label>
+                <input type="number" id="storeId" value="1" min="1" max="1115">
+            </div>
+
+            <div class="control-group">
+                <label for="targetType">Prediction Target</label>
+                <select id="targetType">
+                    <option value="both">Both Sales & Customers</option>
+                    <option value="Sales">Sales Only</option>
+                    <option value="Customers">Customers Only</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="horizonType">Forecast Horizon</label>
+                <select id="horizonType">
+                    <option value="all">All Horizons (Day, Week, Month)</option>
+                    <option value="day">Next Day</option>
+                    <option value="week">Next Week</option>
+                    <option value="month">Next Month</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <button class="predict-button" onclick="runPredictions()">
+                Generate Predictions
+            </button>
+        </div>
+    </div>
+
+    <div class="info-panel">
+        <h3>About These Predictions</h3>
+        <ul class="info-list">
+            <li>6 independent models trained on Rossmann store sales data</li>
+            <li>Features: Store attributes, temporal patterns, promotions, and historical trends</li>
+            <li>Models automatically select optimal context windows (7-90 days)</li>
+            <li>Confidence intervals based on model MAPE (Mean Absolute Percentage Error)</li>
+            <li>Real-time predictions with sub-second response time</li>
+        </ul>
+    </div>
+
+    <div id="loadingIndicator" style="display: none;">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Generating predictions with ML models...</p>
+        </div>
+    </div>
+
+    <div id="errorMessage" style="display: none;"></div>
+
+    <div id="resultsContainer" class="results-grid"></div>
+</div>
+
+<script>
+async function runPredictions() {
+    const storeId = parseInt(document.getElementById('storeId').value);
+    const targetType = document.getElementById('targetType').value;
+    const horizonType = document.getElementById('horizonType').value;
+
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const errorMessage = document.getElementById('errorMessage');
+    const resultsContainer = document.getElementById('resultsContainer');
+
+    // Show loading
+    loadingIndicator.style.display = 'block';
+    errorMessage.style.display = 'none';
+    resultsContainer.innerHTML = '';
+
+    try {
+        if (horizonType === 'all' || targetType === 'both') {
+            // Batch prediction
+            const response = await fetch('/api/batch_predict', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ store_id: storeId })
+            });
+
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.error);
+            }
+
+            // Display results
+            displayBatchResults(data.predictions, targetType, horizonType);
+
+        } else {
+            // Single prediction
+            const response = await fetch('/api/predict', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    store_id: storeId,
+                    target: targetType,
+                    horizon: horizonType
+                })
+            });
+
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.error);
+            }
+
+            // Display single result
+            displaySingleResult(targetType, horizonType, data);
+        }
+
+    } catch (error) {
+        errorMessage.innerHTML = `<div class="error-message">
+            <strong>Error:</strong> ${error.message}
+        </div>`;
+        errorMessage.style.display = 'block';
+    } finally {
+        loadingIndicator.style.display = 'none';
+    }
+}
+
+function displayBatchResults(predictions, targetType, horizonType) {
+    const resultsContainer = document.getElementById('resultsContainer');
+    resultsContainer.innerHTML = '';
+
+    const targets = targetType === 'both' ? ['sales', 'customers'] : [targetType.toLowerCase()];
+    const horizons = horizonType === 'all' ? ['day', 'week', 'month'] : [horizonType];
+
+    targets.forEach(target => {
+        horizons.forEach(horizon => {
+            if (predictions[target] && predictions[target][horizon]) {
+                const data = predictions[target][horizon];
+                const card = createPredictionCard(target, horizon, data);
+                resultsContainer.appendChild(card);
+            }
+        });
+    });
+}
+
+function displaySingleResult(target, horizon, data) {
+    const resultsContainer = document.getElementById('resultsContainer');
+    resultsContainer.innerHTML = '';
+
+    const cardData = {
+        value: data.prediction,
+        confidence_lower: data.confidence_interval.lower,
+        confidence_upper: data.confidence_interval.upper,
+        mape: data.metrics.MAPE,
+        metrics: data.metrics,
+        context_window: data.context_window
+    };
+
+    const card = createPredictionCard(target.toLowerCase(), horizon, cardData);
+    resultsContainer.appendChild(card);
+}
+
+function createPredictionCard(target, horizon, data) {
+    const card = document.createElement('div');
+    card.className = `prediction-card ${target}`;
+
+    const targetLabel = target.charAt(0).toUpperCase() + target.slice(1);
+    const horizonLabel = horizon.charAt(0).toUpperCase() + horizon.slice(1);
+    const icon = target === 'sales' ? '💰' : '👥';
+    const unit = target === 'sales' ? '$' : '';
+
+    const formatNumber = (num) => {
+        return num.toLocaleString('en-US', {
+            maximumFractionDigits: 0,
+            minimumFractionDigits: 0
+        });
+    };
+
+    const confidencePercent = ((data.value - data.confidence_lower) /
+                              (data.confidence_upper - data.confidence_lower)) * 100;
+
+    card.innerHTML = `
+        <div class="card-header">
+            <div class="card-icon">${icon}</div>
+            <div class="card-title">
+                <h3>${targetLabel} Prediction</h3>
+                <p>${horizonLabel} Forecast</p>
+            </div>
+        </div>
+
+        <div class="prediction-value">
+            <div class="value-label">Predicted ${targetLabel}</div>
+            <div class="main-value">${unit}${formatNumber(data.value)}</div>
+        </div>
+
+        <div class="confidence-range">
+            <h4>95% Confidence Interval</h4>
+            <div class="range-values">
+                <span>${unit}${formatNumber(data.confidence_lower)}</span>
+                <span>${unit}${formatNumber(data.confidence_upper)}</span>
+            </div>
+            <div class="range-bar">
+                <div class="range-marker" style="left: ${confidencePercent}%"></div>
+            </div>
+        </div>
+
+        ${data.metrics ? `
+        <div class="metrics-grid">
+            <div class="metric-item">
+                <div class="metric-label">MAPE</div>
+                <div class="metric-value">${data.metrics.MAPE ? data.metrics.MAPE.toFixed(2) : data.mape.toFixed(2)}%</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-label">R² Score</div>
+                <div class="metric-value">${data.metrics.R2 ? data.metrics.R2.toFixed(4) : 'N/A'}</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-label">MAE</div>
+                <div class="metric-value">${data.metrics.MAE ? formatNumber(data.metrics.MAE) : 'N/A'}</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-label">RMSE</div>
+                <div class="metric-value">${data.metrics.RMSE ? formatNumber(data.metrics.RMSE) : 'N/A'}</div>
+            </div>
+        </div>
+        ` : ''}
+
+        ${data.context_window ? `
+        <div class="model-info">
+            <strong>Model Info:</strong> Using ${data.context_window}-day context window for optimal accuracy
+        </div>
+        ` : ''}
+    `;
+
+    return card;
+}
+
+// Run predictions on page load with defaults
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        runPredictions();
+    }, 500);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,485 @@
+{% extends "base.html" %}
+
+{% block title %}Package Tracking{% endblock %}
+
+{% block content %}
+<div class="tracking-container">
+    <h1><i class="fas fa-truck"></i> Package Tracking</h1>
+
+    <div class="tracking-form-container">
+        <form class="tracking-form" id="trackingForm">
+            <div class="form-group">
+                <label for="tracking_number">Enter Tracking Number:</label>
+                <input type="text" id="tracking_number" name="tracking_number" required
+                       placeholder="e.g., 653999410058309141444527"
+                       value="{{ tracking_number or '' }}">
+            </div>
+            <button type="submit" class="btn btn-primary" id="trackButton">
+                <span id="buttonText">Track Package</span>
+                <span id="spinner" class="spinner" style="display: none;">●●●</span>
+            </button>
+        </form>
+    </div>
+
+    <div id="errorContainer" class="alert alert-error" style="display: none;">
+        <p id="errorMessage"></p>
+    </div>
+
+    <div id="trackingResultContainer" style="display: none;">
+        <div class="tracking-result">
+            <h2>Tracking Information for: <span id="displayTrackingNumber"></span></h2>
+
+            <div class="tracking-summary">
+                <div class="summary-item">
+                    <strong>Carrier:</strong>
+                    <span id="carrier"></span>
+                </div>
+                <div class="summary-item">
+                    <strong>Tracking Number:</strong>
+                    <span id="displayTrackingNumber2"></span>
+                </div>
+                <div class="summary-item">
+                    <strong>Delivery Status:</strong>
+                    <span class="status-badge" id="deliveryStatus"></span>
+                </div>
+                <div class="summary-item">
+                    <strong>Origin:</strong>
+                    <span id="origin"></span>
+                </div>
+                <div class="summary-item">
+                    <strong>Destination:</strong>
+                    <span id="destination"></span>
+                </div>
+            </div>
+
+            <div id="latestStatusSection">
+                <div class="latest-status">
+                    <h3><i class="fas fa-info-circle"></i> Current Status</h3>
+                    <div class="status-update">
+                        <div class="status-info">
+                            <h4 id="currentStatusHeader"></h4>
+                            <p class="status-description" id="statusDescription"></p>
+                            <p class="status-date" id="statusDate"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="trackingHistorySection">
+                <div class="tracking-history">
+                    <h3><i class="fas fa-history"></i> Tracking History</h3>
+                    <div class="timeline" id="timelineContainer">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="min-height: 28vh;"></div>
+
+<style>
+.tracking-container {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+.tracking-form-container {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.tracking-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-group label {
+    font-weight: bold;
+    color: #333;
+}
+
+.form-group input {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    text-align: center;
+}
+
+.btn-primary {
+    background-color: #3498DB;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.alert {
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.tracking-result {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding: 30px;
+    margin-top: 20px;
+}
+
+.tracking-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.summary-item strong {
+    margin-bottom: 5px;
+    color: #555;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-badge.delivered {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-badge.in_transit {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.pending {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.status-badge.exception {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.latest-status {
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: #e9f7ef;
+    border-left: 4px solid #28a745;
+    border-radius: 0 4px 4px 0;
+}
+
+.status-update {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.status-info h4 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    font-size: 18px;
+}
+
+.status-description {
+    margin: 0 0 10px 0;
+    color: #555;
+    font-style: italic;
+}
+
+.status-date {
+    margin: 0;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.tracking-history {
+    margin-top: 30px;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 25px;
+    padding-bottom: 25px;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -36px;
+    top: 5px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #007bff;
+    border: 3px solid white;
+    box-shadow: 0 0 0 2px #007bff;
+}
+
+.timeline-content {
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.timeline-content h4 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+}
+
+.checkpoint-description {
+    margin: 0 0 8px 0;
+    color: #555;
+}
+
+.checkpoint-date, .checkpoint-location {
+    margin: 0;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.spinner {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .tracking-container {
+        padding: 0 10px;
+    }
+
+    .tracking-form-container, .tracking-result {
+        padding: 20px;
+    }
+
+    .tracking-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .timeline {
+        padding-left: 20px;
+    }
+
+    .timeline::before {
+        left: 8px;
+    }
+
+    .timeline-marker {
+        left: -24px;
+    }
+}
+</style>
+
+<script>
+// Function to automatically track when the page loads if a tracking number is in URL
+function autoTrackFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const trackingNumber = urlParams.get('tracking_number');
+
+    if (trackingNumber) {
+        // Set the tracking number in the input field
+        document.getElementById('tracking_number').value = trackingNumber;
+
+        // Automatically submit the tracking request
+        trackPackage(trackingNumber);
+    }
+}
+
+// Function to track package with the given tracking number
+function trackPackage(trackingNumber) {
+    const trackButton = document.getElementById('trackButton');
+    const buttonText = document.getElementById('buttonText');
+    const spinner = document.getElementById('spinner');
+
+    // Show spinner and disable button to prevent multiple submissions
+    trackButton.disabled = true;
+    buttonText.style.display = 'none';
+    spinner.style.display = 'inline-block';
+
+    // Hide any previous error or result
+    document.getElementById('errorContainer').style.display = 'none';
+    document.getElementById('trackingResultContainer').style.display = 'none';
+
+    // Make AJAX request
+    fetch('/api/track', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            tracking_number: trackingNumber
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Hide spinner and re-enable button
+        trackButton.disabled = false;
+        buttonText.style.display = 'inline';
+        spinner.style.display = 'none';
+
+        if (data.success) {
+            // Populate and show tracking results
+            document.getElementById('displayTrackingNumber').textContent = data.tracking_number;
+            document.getElementById('displayTrackingNumber2').textContent = data.tracking_number;
+            document.getElementById('carrier').textContent = (data.data.courier_code || 'N/A').replace(/\b\w/g, l => l.toUpperCase());
+
+            const deliveryStatus = (data.data.delivery_status || 'N/A').replace(/\b\w/g, l => l.toUpperCase());
+            const statusBadge = document.getElementById('deliveryStatus');
+            statusBadge.textContent = deliveryStatus;
+            statusBadge.className = 'status-badge ' + (data.data.delivery_status || 'pending').toLowerCase();
+
+            document.getElementById('origin').textContent = data.data.origin_info?.trackinfo?.[0]?.country_iso2 || 'N/A';
+            document.getElementById('destination').textContent = data.data.destination_info?.trackinfo?.[0]?.country_iso2 || 'N/A';
+
+            if (data.data.latest_event) {
+                document.getElementById('currentStatusHeader').textContent = deliveryStatus;
+                document.getElementById('statusDescription').textContent = data.data.latest_event;
+                document.getElementById('statusDate').textContent = data.data.latest_checkpoint_time || 'N/A';
+                document.getElementById('latestStatusSection').style.display = 'block';
+            } else {
+                document.getElementById('latestStatusSection').style.display = 'none';
+            }
+
+            // Populate tracking history
+            const timelineContainer = document.getElementById('timelineContainer');
+            timelineContainer.innerHTML = '';
+
+            if (data.data.origin_info?.trackinfo) {
+                const checkpoints = [...data.data.origin_info.trackinfo].reverse(); // Reverse to show in chronological order
+
+                if (checkpoints.length > 0) {
+                    checkpoints.forEach(checkpoint => {
+                        const timelineItem = document.createElement('div');
+                        timelineItem.className = 'timeline-item';
+
+                        timelineItem.innerHTML = `
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h4>${checkpoint.checkpoint_delivery_status || 'N/A'}</h4>
+                                <p class="checkpoint-description">${checkpoint.tracking_detail || 'No details available'}</p>
+                                <p class="checkpoint-date">${checkpoint.checkpoint_date || 'N/A'}</p>
+                                ${checkpoint.city || checkpoint.state ?
+                                    `<p class="checkpoint-location">
+                                        ${checkpoint.city || ''}${checkpoint.city && checkpoint.state ? ', ' : ''}${checkpoint.state || ''}
+                                    </p>` : ''}
+                            </div>
+                        `;
+                        timelineContainer.appendChild(timelineItem);
+                    });
+
+                    document.getElementById('trackingHistorySection').style.display = 'block';
+                } else {
+                    document.getElementById('trackingHistorySection').style.display = 'none';
+                }
+            } else {
+                document.getElementById('trackingHistorySection').style.display = 'none';
+            }
+
+            document.getElementById('trackingResultContainer').style.display = 'block';
+        } else {
+            // Show error message
+            document.getElementById('errorMessage').textContent = data.message;
+            document.getElementById('errorContainer').style.display = 'block';
+        }
+    })
+    .catch(error => {
+        // Hide spinner and re-enable button
+        trackButton.disabled = false;
+        buttonText.style.display = 'inline';
+        spinner.style.display = 'none';
+
+        // Show error message
+        document.getElementById('errorMessage').textContent = 'An error occurred while tracking your package. Please try again.';
+        document.getElementById('errorContainer').style.display = 'block';
+
+        console.error('Error:', error);
+    });
+}
+
+// Handle form submission
+document.getElementById('trackingForm').addEventListener('submit', function(e) {
+    e.preventDefault(); // Prevent default form submission
+
+    const trackingNumber = document.getElementById('tracking_number').value;
+    trackPackage(trackingNumber);
+});
+
+// Auto-track when the page loads if there's a tracking number in URL
+window.addEventListener('load', function() {
+    autoTrackFromUrl();
+});
+</script>
+{% endblock %}

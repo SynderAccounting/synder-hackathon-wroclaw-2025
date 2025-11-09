@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}{{ customer.name }} - One Front{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="fas fa-user"></i> Customer Details</h2>
+    <a href="{{ url_for('edit_customer', customer_id=customer.id) }}" class="btn btn-primary">
+        <i class="fas fa-edit"></i> Edit Customer
+    </a>
+</div>
+
+<div class="customer-header">
+    <div class="customer-info">
+        <div class="customer-details">
+            <h3>
+                <i class="fas fa-user-circle" style="font-size: 1.2em; color: #007bff; margin-right: 8px;"></i>
+                {{ customer.name }}
+            </h3>
+            <div class="customer-identifiers">
+                <div class="identifier-item">
+                    <i class="fas fa-envelope"></i> {{ customer.email }}
+                </div>
+                {% if customer.phone %}
+                <div class="identifier-item">
+                    <i class="fas fa-phone"></i> {{ customer.phone }}
+                </div>
+                {% endif %}
+                <div class="identifier-item">
+                    <i class="fas fa-calendar"></i> Member since {{ customer.date_joined[:10] }}
+                </div>
+            </div>
+            {% if customer.notes %}
+            <div class="detail-item full-width">
+                <strong>Notes:</strong> {{ customer.notes }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="customer-summary">
+        <div class="customer-stats">
+            <div class="stat-item">
+                <div class="label">Status</div>
+                <div class="value"><span class="badge badge-{{ customer.status }}">{{ customer.status }}</span></div>
+            </div>
+            <div class="stat-item">
+                <div class="label">Total Orders</div>
+                <div class="value">{{ orders|length }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="label">Total Spent</div>
+                <div class="value">${{ "%.2f"|format(orders|sum(attribute='total_amount') if orders else 0) }}</div>
+            </div>
+        </div>
+
+        {% if customer.address %}
+        <div class="address-info">
+            <div class="label" style="margin-left: 10px;"><i class="fas fa-map-marker-alt"></i> Address</div>
+            <div class="value" style="margin-left: 10px;">{{ customer.address }}</div>
+        </div>
+        {% endif %}
+
+        {% if customer.nip %}
+        <div class="tax-info">
+            <div class="label"><i class="fas fa-file-invoice"></i> NIP (Tax ID)</div>
+            <div class="value">{{ customer.nip }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if customer.notes %}
+<div class="section">
+    <h3><i class="fas fa-sticky-note"></i> Customer Notes</h3>
+    <div class="notes-content">
+        {{ customer.notes }}
+    </div>
+</div>
+{% endif %}
+
+<div class="section">
+    <h3><i class="fas fa-shopping-cart"></i> Order History</h3>
+    {% if orders %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td><a href="{{ url_for('order_detail', order_id=order.id) }}" class="order-id">#{{ order.id }}</a></td>
+                    <td>{{ order.order_date[:10] }}</td>
+                    <td class="amount-cell">${{ "%.2f"|format(order.total_amount) }}</td>
+                    <td><span class="badge badge-{{ order.status }}">{{ order.status }}</span></td>
+                    <td><a href="{{ url_for('order_detail', order_id=order.id) }}" class="btn btn-small btn-primary" style="color: white;">View</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-state-small">
+            <p><i class="fas fa-info-circle"></i> No orders found for this customer.</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="section" style="margin-top: 20px; width: 100%;">
+    <h3><i class="fas fa-comments"></i> Customer Interactions</h3>
+
+    <form method="POST" action="{{ url_for('add_interaction', customer_id=customer.id) }}" class="form inline-form">
+        <div class="form-row">
+            <div class="form-group" style="flex: 0 0 auto; width: 160px;">
+                <label for="interaction_type"><i class="fas fa-tag"></i> Type</label>
+                <select id="interaction_type" name="interaction_type" required>
+                    <option value="call">Phone Call</option>
+                    <option value="email">Email</option>
+                    <option value="meeting">Meeting</option>
+                    <option value="support">Support</option>
+                    <option value="complaint">Complaint</option>
+                    <option value="feedback">Feedback</option>
+                </select>
+            </div>
+            <div class="form-group flex-grow">
+                <label for="notes"><i class="fas fa-sticky-note"></i> Notes</label>
+                <input type="text" id="notes" name="notes" placeholder="Add interaction notes...">
+            </div>
+            <div class="form-group" style="flex: 0 0 auto; width: 160px;">
+                <label for="created_by"><i class="fas fa-user"></i> Created By</label>
+                <input type="text" id="created_by" name="created_by" value="Admin">
+            </div>
+            <div class="form-group" style="flex: 0 0 auto;">
+                <label>&nbsp;</label>
+                <button type="submit" class="btn btn-primary" style="display: flex; align-items: center; gap: 8px; height: 45px;">
+                    <i class="fas fa-plus"></i> Add
+                </button>
+            </div>
+        </div>
+    </form>
+
+    {% if interactions %}
+        <table class="data-table" style="margin-top: 20px;">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Notes</th>
+                    <th>Created By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for interaction in interactions %}
+                <tr>
+                    <td>{{ interaction.interaction_date[:10] }}</td>
+                    <td><span class="badge">{{ interaction.interaction_type }}</span></td>
+                    <td>{{ interaction.notes }}</td>
+                    <td>{{ interaction.created_by }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-state-small" style="margin-top: 20px;">
+            <p><i class="fas fa-info-circle"></i> No interactions recorded for this customer.</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.customer-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.customer-info {
+    flex: 1;
+    min-width: 300px;
+}
+
+.customer-icon {
+    font-size: 24px;
+    color: #007bff;
+    margin-bottom: 15px;
+}
+
+.customer-details h3 {
+    margin: 0 0 15px 0;
+    font-size: 1.5em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.customer-identifiers {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.identifier-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #6c757d;
+    font-size: 0.95em;
+}
+
+.customer-summary {
+    flex: 2;
+    min-width: 300px;
+}
+
+.customer-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.stat-item {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    text-align: center;
+}
+
+.stat-item .label {
+    font-size: 0.85em;
+    color: #6c757d;
+    margin-bottom: 4px;
+}
+
+.stat-item .value {
+    font-weight: 600;
+    font-size: 1.2em;
+}
+
+.address-info, .tax-info {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-top: 10px;
+}
+
+.address-info .label, .tax-info .label {
+    font-size: 0.85em;
+    color: #6c757d;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.address-info {
+    margin-left: 17px;
+}
+
+.address-info .value, .tax-info .value {
+    font-weight: 600;
+    font-size: 1em;
+}
+
+.notes-content {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    line-height: 1.6;
+}
+
+.order-id {
+    font-weight: 700;
+    color: #3498db;
+    text-decoration: none;
+    font-size: 1.05rem;
+}
+
+.order-id:hover {
+    text-decoration: underline;
+}
+
+.amount-cell {
+    font-weight: 700;
+    color: #27ae60;
+    font-size: 1.05rem;
+}
+
+.empty-state-small {
+    padding: 20px;
+    text-align: center;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    margin-top: 10px;
+}
+
+.empty-state-small i {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.form-group {
+    margin-bottom: 0;
+    min-width: 150px;
+    flex: 1;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .customer-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .customer-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-group {
+        min-width: 100%;
+    }
+}
+</style>
+{% endblock %}
