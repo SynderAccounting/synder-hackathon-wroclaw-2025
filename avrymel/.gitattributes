@@ -1,0 +1,27 @@
+# Ensure shell scripts always use LF line endings
+*.sh text eol=lf
+docker-entrypoint.sh text eol=lf
+
+# Python files
+*.py text eol=lf
+
+# Docker files
+Dockerfile text eol=lf
+docker-compose*.yml text eol=lf
+
+# Frontend files
+*.ts text
+*.tsx text
+*.js text
+*.jsx text
+*.json text
+*.md text
+
+# Ensure these are always treated as binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
